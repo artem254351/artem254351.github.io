@@ -1,0 +1,2067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D GTA-Style Game</title>
+    <link rel="icon" href="logo.jpg">
+    <style>
+        /* ==========================================
+           CSS STYLES FOR GAME CONTAINER AND UI
+           ========================================== */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        #gameContainer {
+            position: relative;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+        }
+        
+        #gameCanvas {
+            border: 4px solid #333;
+            border-radius: 8px;
+            display: block;
+            cursor: crosshair;
+        }
+        
+        #miniMapCanvas {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.6);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        #speedometer {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(180deg, rgba(40, 40, 40, 0.9) 0%, rgba(20, 20, 20, 0.95) 100%);
+            padding: 15px 30px;
+            border-radius: 15px;
+            border: 2px solid #555;
+            color: #00ff88;
+            font-size: 28px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+            min-width: 200px;
+            text-align: center;
+        }
+        
+        #speedValue {
+            color: #fff;
+            font-size: 36px;
+        }
+        
+        #boostIndicator {
+            color: #ff6600;
+            font-size: 20px;
+            margin-left: 10px;
+        }
+        
+        /* Wanted Stars Display */
+        #wantedStars {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 32px;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+            letter-spacing: 5px;
+        }
+        
+        /* Weapon Display */
+        #weaponDisplay {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 20px;
+            border-radius: 10px;
+            color: white;
+            border: 2px solid #555;
+        }
+        
+        #weaponDisplay .weapon-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #00ff88;
+        }
+        
+        #weaponDisplay .ammo {
+            font-size: 24px;
+            color: #fff;
+        }
+        
+        /* Health Bar */
+        #healthBar {
+            position: absolute;
+            bottom: 90px;
+            left: 20px;
+            width: 200px;
+            height: 25px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 12px;
+            border: 2px solid #555;
+            overflow: hidden;
+        }
+        
+        #healthFill {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #ff4444, #ff6666);
+            transition: width 0.3s;
+        }
+        
+        #healthText {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            line-height: 25px;
+            text-shadow: 1px 1px 2px black;
+        }
+        
+        /* Pause Overlay */
+        #pauseOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            border-radius: 8px;
+            z-index: 100;
+        }
+        
+        #pauseOverlay h1 {
+            font-size: 72px;
+            color: #ff4444;
+            text-shadow: 0 0 30px rgba(255, 68, 68, 0.8);
+            margin-bottom: 20px;
+        }
+        
+        #pauseOverlay p {
+            font-size: 24px;
+            color: #aaa;
+        }
+        
+        /* Main Menu */
+        #mainMenu {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(20, 20, 40, 0.95) 0%, rgba(10, 10, 30, 0.98) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            border-radius: 8px;
+        }
+        
+        #mainMenu h1 {
+            font-size: 64px;
+            color: #ff4444;
+            text-shadow: 0 0 40px rgba(255, 68, 68, 0.8), 0 0 80px rgba(255, 68, 68, 0.4);
+            margin-bottom: 60px;
+            letter-spacing: 5px;
+        }
+        
+        .menuButton {
+            background: linear-gradient(180deg, #444 0%, #222 100%);
+            color: white;
+            border: 3px solid #666;
+            padding: 18px 60px;
+            font-size: 24px;
+            margin: 12px;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s;
+            min-width: 280px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        
+        .menuButton:hover {
+            background: linear-gradient(180deg, #ff5555 0%, #cc3333 100%);
+            border-color: #ff6666;
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(255, 68, 68, 0.5);
+        }
+        
+        /* Settings Panel */
+        #settingsPanel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 250;
+            border-radius: 8px;
+        }
+        
+        #settingsPanel h2 {
+            font-size: 48px;
+            color: #00ff88;
+            margin-bottom: 40px;
+        }
+        
+        .settingRow {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            color: white;
+            font-size: 20px;
+        }
+        
+        .settingRow label {
+            width: 200px;
+            text-align: right;
+            margin-right: 20px;
+        }
+        
+        .settingRow input[type="range"] {
+            width: 200px;
+            cursor: pointer;
+        }
+        
+        .settingRow span {
+            width: 60px;
+            margin-left: 15px;
+            color: #00ff88;
+        }
+        
+        .controlsInfo {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px 40px;
+            border-radius: 15px;
+            margin: 30px 0;
+            color: #ddd;
+            line-height: 2;
+        }
+        
+        .controlsInfo h3 {
+            color: #00ff88;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+        
+        .controlsInfo span {
+            color: #ffcc00;
+            font-weight: bold;
+        }
+        
+        #controlsPanel {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.75);
+            padding: 12px 18px;
+            border-radius: 10px;
+            color: #ddd;
+            font-size: 12px;
+            line-height: 1.6;
+            border: 1px solid #444;
+        }
+        
+        #controlsPanel span {
+            color: #00ff88;
+            font-weight: bold;
+        }
+        
+        /* Player Mode Indicator */
+        #modeIndicator {
+            position: absolute;
+            bottom: 130px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 20px;
+            border-radius: 8px;
+            color: #00ff88;
+            font-size: 16px;
+            border: 2px solid #444;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- Main Menu -->
+        <div id="mainMenu">
+            <h1>🚗 GTA 2D</h1>
+            <button class="menuButton" onclick="startGame()">▶ Начать игру</button>
+            <button class="menuButton" onclick="showSettings()">⚙ Настройки</button>
+            <button class="menuButton" onclick="showControls()">📖 Управление</button>
+        </div>
+        
+        <!-- Settings Panel -->
+        <div id="settingsPanel">
+            <h2>⚙ Настройки</h2>
+            <div class="settingRow">
+                <label>Громкость звуков:</label>
+                <input type="range" id="sfxVolume" min="0" max="100" value="70">
+                <span id="sfxVolumeValue">70%</span>
+            </div>
+            <div class="settingRow">
+                <label>Громкость музыки:</label>
+                <input type="range" id="musicVolume" min="0" max="100" value="50">
+                <span id="musicVolumeValue">50%</span>
+            </div>
+            <div class="settingRow">
+                <label>Сложность:</label>
+                <select id="difficulty" style="padding: 8px; font-size: 16px;">
+                    <option value="easy">Легко</option>
+                    <option value="normal" selected>Нормально</option>
+                    <option value="hard">Сложно</option>
+                </select>
+            </div>
+            <div class="controlsInfo" id="controlsInfoPanel" style="display: none;">
+                <h3>📖 Управление</h3>
+                <span>↑↓←→ / WASD</span> - Движение<br>
+                <span>SHIFT</span> - Ускорение<br>
+                <span>F</span> - Войти/Выйти из машины<br>
+                <span>1</span> - Пистолет<br>
+                <span>2</span> - Автомат<br>
+                <span>ЛКМ</span> - Стрелять<br>
+                <span>P</span> - Пауза
+            </div>
+            <button class="menuButton" onclick="hideSettings()">← Назад</button>
+        </div>
+        
+        <!-- Game Canvas -->
+        <canvas id="gameCanvas"></canvas>
+        <canvas id="miniMapCanvas"></canvas>
+        
+        <!-- Wanted Stars -->
+        <div id="wantedStars"></div>
+        
+        <!-- Health Bar -->
+        <div id="healthBar">
+            <div id="healthFill"></div>
+            <div id="healthText">100</div>
+        </div>
+        
+        <!-- Mode Indicator -->
+        <div id="modeIndicator">🚗 В машине</div>
+        
+        <!-- Speedometer -->
+        <div id="speedometer">
+            <span id="speedValue">0</span> km/h
+            <span id="boostIndicator"></span>
+        </div>
+        
+        <!-- Weapon Display -->
+        <div id="weaponDisplay">
+            <div class="weapon-name" id="currentWeapon">Пистолет</div>
+            <div class="ammo">∞</div>
+        </div>
+        
+        <!-- Pause Overlay -->
+        <div id="pauseOverlay">
+            <h1>⏸️ ПАУЗА</h1>
+            <p>Нажмите <strong>P</strong> для продолжения</p>
+        </div>
+        
+        <!-- Controls Panel -->
+        <div id="controlsPanel">
+            <span>WASD/↑↓←→</span> Движение<br>
+            <span>SHIFT</span> Ускорение<br>
+            <span>F</span> Вход/Выход<br>
+            <span>1/2</span> Оружие<br>
+            <span>ЛКМ</span> Стрельба<br>
+            <span>P</span> Пауза
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // GAME CONFIGURATION CONSTANTS
+        // ============================================================
+        const CONFIG = {
+            MAP_SIZE: 50,
+            CELL_SIZE: 32,
+            BASE_SPEED: 2,
+            BOOST_MULTIPLIER: 2.5,
+            TURN_SPEED: 3,
+            ACCELERATION: 0.15,
+            ROAD_LINE_WIDTH: 3,
+            INTERSECTION_EXTRA: 5,
+            ROAD_SPACING: 8,
+            VIEWPORT_WIDTH: 1000,
+            VIEWPORT_HEIGHT: 700,
+            
+            // NPC settings
+            NPC_COUNT: 25,
+            NPC_CAR_COUNT: 10,
+            POLICE_RESPONSE_TIME: 3000,
+            
+            // Weapon settings
+            PISTOL_FIRE_RATE: 400,
+            RIFLE_FIRE_RATE: 100,
+            PISTOL_DAMAGE: 25,
+            RIFLE_DAMAGE: 15,
+            BULLET_SPEED: 15,
+            
+            get MINIMAP_SIZE() {
+                return Math.min(this.VIEWPORT_WIDTH, this.VIEWPORT_HEIGHT) * 0.15;
+            }
+        };
+
+        // ============================================================
+        // CANVAS INITIALIZATION
+        // ============================================================
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = CONFIG.VIEWPORT_WIDTH;
+        canvas.height = CONFIG.VIEWPORT_HEIGHT;
+        
+        const miniMapCanvas = document.getElementById('miniMapCanvas');
+        const miniCtx = miniMapCanvas.getContext('2d');
+        miniMapCanvas.width = CONFIG.MINIMAP_SIZE;
+        miniMapCanvas.height = CONFIG.MINIMAP_SIZE;
+
+        // ============================================================
+        // GAME STATE MANAGEMENT
+        // ============================================================
+        const gameState = {
+            isPaused: false,
+            isStarted: false,
+            lastTimestamp: 0,
+            totalTime: 0,
+            wantedLevel: 0,          // 0-5 stars
+            wantedTimer: 0,          // Time until wanted level decreases
+            policeAlertTimer: 0,     // Time until police spawn
+            mouseX: 0,
+            mouseY: 0,
+            settings: {
+                sfxVolume: 70,
+                musicVolume: 50,
+                difficulty: 'normal'
+            }
+        };
+
+        // ============================================================
+        // INPUT HANDLING
+        // ============================================================
+        const inputState = {
+            up: false,
+            down: false,
+            left: false,
+            right: false,
+            shift: false,
+            shooting: false
+        };
+
+        document.addEventListener('keydown', (event) => {
+            if (!gameState.isStarted) return;
+            
+            switch(event.key.toLowerCase()) {
+                case 'arrowup':
+                case 'w':
+                    inputState.up = true;
+                    event.preventDefault();
+                    break;
+                case 'arrowdown':
+                case 's':
+                    inputState.down = true;
+                    event.preventDefault();
+                    break;
+                case 'arrowleft':
+                case 'a':
+                    inputState.left = true;
+                    event.preventDefault();
+                    break;
+                case 'arrowright':
+                case 'd':
+                    inputState.right = true;
+                    event.preventDefault();
+                    break;
+                case 'shift':
+                    inputState.shift = true;
+                    break;
+                case 'p':
+                    togglePause();
+                    break;
+                case 'f':
+                    toggleVehicle();
+                    break;
+                case '1':
+                    player.currentWeapon = 0;
+                    updateWeaponDisplay();
+                    break;
+                case '2':
+                    player.currentWeapon = 1;
+                    updateWeaponDisplay();
+                    break;
+            }
+        });
+
+        document.addEventListener('keyup', (event) => {
+            switch(event.key.toLowerCase()) {
+                case 'arrowup':
+                case 'w':
+                    inputState.up = false;
+                    break;
+                case 'arrowdown':
+                case 's':
+                    inputState.down = false;
+                    break;
+                case 'arrowleft':
+                case 'a':
+                    inputState.left = false;
+                    break;
+                case 'arrowright':
+                case 'd':
+                    inputState.right = false;
+                    break;
+                case 'shift':
+                    inputState.shift = false;
+                    break;
+            }
+        });
+
+        // Mouse handling for shooting
+        canvas.addEventListener('mousemove', (event) => {
+            const rect = canvas.getBoundingClientRect();
+            gameState.mouseX = event.clientX - rect.left;
+            gameState.mouseY = event.clientY - rect.top;
+        });
+
+        canvas.addEventListener('mousedown', (event) => {
+            if (event.button === 0) {
+                inputState.shooting = true;
+            }
+        });
+
+        canvas.addEventListener('mouseup', (event) => {
+            if (event.button === 0) {
+                inputState.shooting = false;
+            }
+        });
+
+        // ============================================================
+        // MENU FUNCTIONS
+        // ============================================================
+        function startGame() {
+            document.getElementById('mainMenu').style.display = 'none';
+            gameState.isStarted = true;
+            initGame();
+        }
+
+        function showSettings() {
+            document.getElementById('settingsPanel').style.display = 'flex';
+        }
+
+        function hideSettings() {
+            document.getElementById('settingsPanel').style.display = 'none';
+        }
+
+        function showControls() {
+            const panel = document.getElementById('controlsInfoPanel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+            document.getElementById('settingsPanel').style.display = 'flex';
+        }
+
+        // Settings event listeners
+        document.getElementById('sfxVolume').addEventListener('input', (e) => {
+            gameState.settings.sfxVolume = e.target.value;
+            document.getElementById('sfxVolumeValue').textContent = e.target.value + '%';
+        });
+
+        document.getElementById('musicVolume').addEventListener('input', (e) => {
+            gameState.settings.musicVolume = e.target.value;
+            document.getElementById('musicVolumeValue').textContent = e.target.value + '%';
+        });
+
+        function togglePause() {
+            if (!gameState.isStarted) return;
+            gameState.isPaused = !gameState.isPaused;
+            document.getElementById('pauseOverlay').style.display = gameState.isPaused ? 'flex' : 'none';
+        }
+
+        // ============================================================
+        // MAP DATA
+        // ============================================================
+        const gameMap = {
+            roads: { horizontal: [], vertical: [] },
+            intersections: [],
+            buildings: [],
+            parks: []
+        };
+
+        // ============================================================
+        // ENTITIES ARRAYS
+        // ============================================================
+        let npcs = [];              // Pedestrian NPCs
+        let npcCars = [];           // NPC vehicles
+        let policeCars = [];        // Police vehicles
+        let policeOfficers = [];    // Police on foot
+        let bullets = [];           // Active bullets
+        let player;                 // Player instance
+        let playerCar;              // Player's car (when not in it)
+
+        // ============================================================
+        // WEAPON DEFINITIONS
+        // ============================================================
+        const WEAPONS = [
+            {
+                name: 'Пистолет',
+                fireRate: CONFIG.PISTOL_FIRE_RATE,
+                damage: CONFIG.PISTOL_DAMAGE,
+                spread: 0.05,
+                bulletColor: '#ffcc00',
+                icon: '🔫'
+            },
+            {
+                name: 'Автомат',
+                fireRate: CONFIG.RIFLE_FIRE_RATE,
+                damage: CONFIG.RIFLE_DAMAGE,
+                spread: 0.15,
+                bulletColor: '#ff6600',
+                icon: '🔫'
+            }
+        ];
+
+        // ============================================================
+        // MAP GENERATION
+        // ============================================================
+        function generateCityMap() {
+            const spacing = CONFIG.ROAD_SPACING;
+            
+            for (let i = spacing; i < CONFIG.MAP_SIZE; i += spacing) {
+                gameMap.roads.horizontal.push(i);
+                gameMap.roads.vertical.push(i);
+            }
+            
+            for (const y of gameMap.roads.horizontal) {
+                for (const x of gameMap.roads.vertical) {
+                    gameMap.intersections.push({ x, y });
+                }
+            }
+            
+            for (let blockX = 0; blockX < CONFIG.MAP_SIZE; blockX += spacing) {
+                for (let blockY = 0; blockY < CONFIG.MAP_SIZE; blockY += spacing) {
+                    generateCityBlock(blockX, blockY, spacing);
+                }
+            }
+        }
+
+        function generateCityBlock(startX, startY, size) {
+            const margin = 1;
+            const innerX = startX + margin;
+            const innerY = startY + margin;
+            const innerSize = size - margin * 2;
+            
+            if (innerSize <= 1) return;
+            
+            if (Math.random() < 0.2) {
+                createPark(innerX, innerY, innerSize, innerSize);
+            } else {
+                createBuildingsInBlock(innerX, innerY, innerSize, innerSize);
+            }
+        }
+
+        function createPark(x, y, width, height) {
+            const trees = [];
+            const treeCount = Math.floor(Math.random() * 5) + 4;
+            for (let i = 0; i < treeCount; i++) {
+                trees.push({
+                    x: x + 0.5 + Math.random() * (width - 1),
+                    y: y + 0.5 + Math.random() * (height - 1),
+                    radius: 0.25 + Math.random() * 0.35
+                });
+            }
+            gameMap.parks.push({ x, y, width, height, trees });
+        }
+
+        function createBuildingsInBlock(startX, startY, width, height) {
+            const buildingCount = Math.floor(Math.random() * 3) + 2;
+            
+            for (let i = 0; i < buildingCount; i++) {
+                const bWidth = 1.5 + Math.random() * (width / 2 - 0.5);
+                const bHeight = 1.5 + Math.random() * (height / 2 - 0.5);
+                const bX = startX + Math.random() * (width - bWidth);
+                const bY = startY + Math.random() * (height - bHeight);
+                
+                const isBlue = Math.random() > 0.5;
+                const baseShade = Math.floor(Math.random() * 60) + 60;
+                
+                let color = isBlue 
+                    ? `rgb(${baseShade - 20}, ${baseShade}, ${baseShade + 60})`
+                    : `rgb(${baseShade + 10}, ${baseShade + 10}, ${baseShade + 10})`;
+                
+                gameMap.buildings.push({
+                    x: bX, y: bY, width: bWidth, height: bHeight,
+                    color: color,
+                    floors: Math.floor(Math.random() * 5) + 2
+                });
+            }
+        }
+
+        // ============================================================
+        // PLAYER CLASS (supports both car and on-foot modes)
+        // ============================================================
+        class Player {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 1.4;
+                this.height = 0.8;
+                this.angle = 0;
+                this.velocity = 0;
+                this.targetVelocity = 0;
+                this.wheelAngle = 0;
+                this.wheelRotation = 0;
+                
+                // Player state
+                this.inVehicle = true;
+                this.health = 100;
+                this.maxHealth = 100;
+                
+                // On-foot properties
+                this.footSpeed = 3;
+                this.footSize = 0.4;
+                
+                // Weapons
+                this.currentWeapon = 0;
+                this.lastShotTime = 0;
+                
+                // Animation
+                this.walkFrame = 0;
+                this.walkTimer = 0;
+            }
+
+            update(deltaTime) {
+                if (this.inVehicle) {
+                    this.updateVehicle(deltaTime);
+                } else {
+                    this.updateOnFoot(deltaTime);
+                }
+                
+                // Handle shooting
+                if (inputState.shooting && !this.inVehicle) {
+                    this.shoot();
+                }
+                
+                // Keep within map bounds
+                this.x = Math.max(1, Math.min(CONFIG.MAP_SIZE - 1, this.x));
+                this.y = Math.max(1, Math.min(CONFIG.MAP_SIZE - 1, this.y));
+            }
+
+            updateVehicle(deltaTime) {
+                const baseVelocity = CONFIG.BASE_SPEED * CONFIG.CELL_SIZE;
+                const boostMultiplier = inputState.shift ? CONFIG.BOOST_MULTIPLIER : 1;
+                
+                if (inputState.up) {
+                    this.targetVelocity = baseVelocity * boostMultiplier;
+                } else if (inputState.down) {
+                    this.targetVelocity = -baseVelocity * 0.5;
+                } else {
+                    this.targetVelocity = 0;
+                }
+                
+                this.velocity += (this.targetVelocity - this.velocity) * CONFIG.ACCELERATION;
+                
+                if (!inputState.up && !inputState.down) {
+                    this.velocity *= 0.98;
+                }
+                
+                if (Math.abs(this.velocity) < 0.5) {
+                    this.velocity = 0;
+                }
+                
+                if (Math.abs(this.velocity) > 1) {
+                    const turnAmount = CONFIG.TURN_SPEED * deltaTime;
+                    const turnDirection = Math.sign(this.velocity);
+                    
+                    if (inputState.left) {
+                        this.angle -= turnAmount * turnDirection;
+                        this.wheelAngle = -0.5;
+                    } else if (inputState.right) {
+                        this.angle += turnAmount * turnDirection;
+                        this.wheelAngle = 0.5;
+                    } else {
+                        this.wheelAngle *= 0.85;
+                    }
+                    
+                    this.wheelRotation += this.velocity * deltaTime * 0.05;
+                }
+                
+                const moveX = Math.cos(this.angle) * this.velocity * deltaTime;
+                const moveY = Math.sin(this.angle) * this.velocity * deltaTime;
+                
+                const newX = this.x + moveX / CONFIG.CELL_SIZE;
+                const newY = this.y + moveY / CONFIG.CELL_SIZE;
+                
+                this.handleMovementWithCollision(newX, newY);
+            }
+
+            updateOnFoot(deltaTime) {
+                const speed = this.footSpeed * (inputState.shift ? 1.8 : 1);
+                let moveX = 0, moveY = 0;
+                
+                if (inputState.up) moveY -= speed * deltaTime;
+                if (inputState.down) moveY += speed * deltaTime;
+                if (inputState.left) moveX -= speed * deltaTime;
+                if (inputState.right) moveX += speed * deltaTime;
+                
+                // Normalize diagonal movement
+                if (moveX !== 0 && moveY !== 0) {
+                    const factor = 0.707;
+                    moveX *= factor;
+                    moveY *= factor;
+                }
+                
+                // Update angle to face mouse
+                const cameraX = this.x * CONFIG.CELL_SIZE - canvas.width / 2;
+                const cameraY = this.y * CONFIG.CELL_SIZE - canvas.height / 2;
+                const worldMouseX = gameState.mouseX + cameraX;
+                const worldMouseY = gameState.mouseY + cameraY;
+                this.angle = Math.atan2(
+                    worldMouseY - this.y * CONFIG.CELL_SIZE,
+                    worldMouseX - this.x * CONFIG.CELL_SIZE
+                );
+                
+                // Walking animation
+                if (moveX !== 0 || moveY !== 0) {
+                    this.walkTimer += deltaTime;
+                    if (this.walkTimer > 0.1) {
+                        this.walkFrame = (this.walkFrame + 1) % 4;
+                        this.walkTimer = 0;
+                    }
+                }
+                
+                const newX = this.x + moveX;
+                const newY = this.y + moveY;
+                
+                this.handleFootCollision(newX, newY);
+            }
+
+            shoot() {
+                const weapon = WEAPONS[this.currentWeapon];
+                const now = Date.now();
+                
+                if (now - this.lastShotTime < weapon.fireRate) return;
+                
+                this.lastShotTime = now;
+                
+                // Calculate bullet direction with spread
+                const spread = (Math.random() - 0.5) * weapon.spread;
+                const bulletAngle = this.angle + spread;
+                
+                bullets.push({
+                    x: this.x,
+                    y: this.y,
+                    vx: Math.cos(bulletAngle) * CONFIG.BULLET_SPEED,
+                    vy: Math.sin(bulletAngle) * CONFIG.BULLET_SPEED,
+                    damage: weapon.damage,
+                    color: weapon.color,
+                    isPlayerBullet: true
+                });
+            }
+
+            handleMovementWithCollision(newX, newY) {
+                if (!this.checkCollision(newX, newY)) {
+                    this.x = newX;
+                    this.y = newY;
+                    return;
+                }
+                
+                if (!this.checkCollision(newX, this.y)) {
+                    this.x = newX;
+                    this.velocity *= 0.7;
+                    return;
+                }
+                
+                if (!this.checkCollision(this.x, newY)) {
+                    this.y = newY;
+                    this.velocity *= 0.7;
+                    return;
+                }
+                
+                this.velocity *= 0.3;
+            }
+
+            handleFootCollision(newX, newY) {
+                if (!this.checkFootCollision(newX, newY)) {
+                    this.x = newX;
+                    this.y = newY;
+                    return;
+                }
+                
+                if (!this.checkFootCollision(newX, this.y)) {
+                    this.x = newX;
+                    return;
+                }
+                
+                if (!this.checkFootCollision(this.x, newY)) {
+                    this.y = newY;
+                    return;
+                }
+            }
+
+            checkCollision(x, y) {
+                const halfW = this.width / 2;
+                const halfH = this.height / 2;
+                
+                for (const building of gameMap.buildings) {
+                    if (x + halfW > building.x && x - halfW < building.x + building.width &&
+                        y + halfH > building.y && y - halfH < building.y + building.height) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            checkFootCollision(x, y) {
+                const size = this.footSize;
+                
+                for (const building of gameMap.buildings) {
+                    if (x + size > building.x && x - size < building.x + building.width &&
+                        y + size > building.y && y - size < building.y + building.height) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            draw(context, offsetX, offsetY, scale = 1) {
+                if (this.inVehicle) {
+                    this.drawVehicle(context, offsetX, offsetY, scale);
+                } else {
+                    this.drawOnFoot(context, offsetX, offsetY, scale);
+                }
+            }
+
+            drawVehicle(context, offsetX, offsetY, scale) {
+                context.save();
+                
+                const screenX = (this.x * CONFIG.CELL_SIZE - offsetX) * scale;
+                const screenY = (this.y * CONFIG.CELL_SIZE - offsetY) * scale;
+                
+                context.translate(screenX, screenY);
+                context.rotate(this.angle);
+                
+                const carW = this.width * CONFIG.CELL_SIZE * scale;
+                const carH = this.height * CONFIG.CELL_SIZE * scale;
+                
+                // Shadow
+                context.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                context.fillRect(-carW / 2 + 4 * scale, -carH / 2 + 4 * scale, carW, carH);
+                
+                // Car body
+                context.fillStyle = '#e74c3c';
+                context.fillRect(-carW / 2, -carH / 2, carW, carH);
+                
+                // Outline
+                context.strokeStyle = '#c0392b';
+                context.lineWidth = 2 * scale;
+                context.strokeRect(-carW / 2, -carH / 2, carW, carH);
+                
+                // Windows
+                context.fillStyle = '#1a1a2e';
+                const windshieldW = carW * 0.25;
+                const windshieldH = carH * 0.65;
+                context.fillRect(carW * 0.08, -windshieldH / 2, windshieldW, windshieldH);
+                context.fillRect(-carW * 0.35, -windshieldH / 2, windshieldW * 0.8, windshieldH);
+                
+                // Wheels
+                this.drawWheels(context, carW, carH, scale);
+                
+                // Lights
+                context.fillStyle = '#f1c40f';
+                context.fillRect(carW / 2 - 4 * scale, -carH / 3, 5 * scale, 6 * scale);
+                context.fillRect(carW / 2 - 4 * scale, carH / 3 - 6 * scale, 5 * scale, 6 * scale);
+                
+                context.fillStyle = '#ff0000';
+                context.fillRect(-carW / 2 - 1 * scale, -carH / 3, 4 * scale, 5 * scale);
+                context.fillRect(-carW / 2 - 1 * scale, carH / 3 - 5 * scale, 4 * scale, 5 * scale);
+                
+                context.restore();
+            }
+
+            drawWheels(context, carW, carH, scale) {
+                const wheelW = carW * 0.12;
+                const wheelH = carH * 0.28;
+                
+                const wheels = [
+                    [carW * 0.28, -carH / 2 - wheelH / 2, true],
+                    [carW * 0.28, carH / 2 - wheelH / 2, true],
+                    [-carW * 0.28, -carH / 2 - wheelH / 2, false],
+                    [-carW * 0.28, carH / 2 - wheelH / 2, false]
+                ];
+                
+                wheels.forEach(([wx, wy, isFront]) => {
+                    context.save();
+                    context.translate(wx, wy + wheelH / 2);
+                    if (isFront) context.rotate(this.wheelAngle);
+                    
+                    context.fillStyle = '#1a1a1a';
+                    context.fillRect(-wheelW / 2, -wheelH / 2, wheelW, wheelH);
+                    
+                    context.restore();
+                });
+            }
+
+            drawOnFoot(context, offsetX, offsetY, scale) {
+                context.save();
+                
+                const screenX = (this.x * CONFIG.CELL_SIZE - offsetX) * scale;
+                const screenY = (this.y * CONFIG.CELL_SIZE - offsetY) * scale;
+                const size = this.footSize * CONFIG.CELL_SIZE * scale;
+                
+                context.translate(screenX, screenY);
+                
+                // Shadow
+                context.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                context.beginPath();
+                context.ellipse(3, 3, size, size * 0.6, 0, 0, Math.PI * 2);
+                context.fill();
+                
+                // Body
+                context.fillStyle = '#3498db';
+                context.beginPath();
+                context.arc(0, 0, size, 0, Math.PI * 2);
+                context.fill();
+                
+                // Head
+                context.fillStyle = '#f5d0a9';
+                context.beginPath();
+                context.arc(0, 0, size * 0.6, 0, Math.PI * 2);
+                context.fill();
+                
+                // Draw weapon
+                context.rotate(this.angle);
+                const weapon = WEAPONS[this.currentWeapon];
+                
+                // Gun
+                context.fillStyle = '#333';
+                context.fillRect(size * 0.5, -3 * scale, size * 1.2, 6 * scale);
+                
+                // Muzzle flash when shooting
+                if (inputState.shooting && Date.now() - this.lastShotTime < 50) {
+                    context.fillStyle = '#ff6600';
+                    context.beginPath();
+                    context.arc(size * 1.8, 0, 8 * scale, 0, Math.PI * 2);
+                    context.fill();
+                }
+                
+                context.restore();
+            }
+
+            getSpeedKmh() {
+                return Math.abs(Math.round(this.velocity * 0.3));
+            }
+
+            takeDamage(amount) {
+                this.health = Math.max(0, this.health - amount);
+                updateHealthDisplay();
+                
+                if (this.health <= 0) {
+                    // Respawn
+                    this.health = this.maxHealth;
+                    this.x = CONFIG.ROAD_SPACING;
+                    this.y = CONFIG.ROAD_SPACING;
+                    gameState.wantedLevel = 0;
+                    updateWantedDisplay();
+                }
+            }
+        }
+
+        // ============================================================
+        // NPC PEDESTRIAN CLASS
+        // ============================================================
+        class NPC {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.angle = Math.random() * Math.PI * 2;
+                this.speed = 1 + Math.random() * 0.5;
+                this.size = 0.35;
+                this.health = 50;
+                this.color = `hsl(${Math.random() * 360}, 60%, 50%)`;
+                this.walkFrame = 0;
+                this.walkTimer = 0;
+                this.state = 'walking'; // walking, fleeing, dead
+                this.targetX = x;
+                this.targetY = y;
+                this.changeDirectionTimer = 0;
+                this.isPolice = false;
+            }
+
+            update(deltaTime) {
+                if (this.state === 'dead') return;
+                
+                this.changeDirectionTimer -= deltaTime;
+                
+                // Check if player is nearby and shooting - flee
+                const distToPlayer = Math.hypot(player.x - this.x, player.y - this.y);
+                
+                if (inputState.shooting && distToPlayer < 10 && !player.inVehicle) {
+                    this.state = 'fleeing';
+                    // Run away from player
+                    this.angle = Math.atan2(this.y - player.y, this.x - player.x);
+                }
+                
+                // Random direction change
+                if (this.changeDirectionTimer <= 0) {
+                    if (this.state !== 'fleeing') {
+                        this.angle += (Math.random() - 0.5) * Math.PI / 2;
+                    }
+                    this.changeDirectionTimer = 2 + Math.random() * 3;
+                    
+                    if (this.state === 'fleeing' && distToPlayer > 15) {
+                        this.state = 'walking';
+                    }
+                }
+                
+                // Move
+                const speed = this.state === 'fleeing' ? this.speed * 2 : this.speed;
+                const newX = this.x + Math.cos(this.angle) * speed * deltaTime;
+                const newY = this.y + Math.sin(this.angle) * speed * deltaTime;
+                
+                // Check collision with buildings
+                if (!this.checkCollision(newX, newY)) {
+                    this.x = newX;
+                    this.y = newY;
+                } else {
+                    this.angle += Math.PI / 2 + Math.random() * Math.PI;
+                }
+                
+                // Keep in bounds
+                if (this.x < 1 || this.x > CONFIG.MAP_SIZE - 1) this.angle = Math.PI - this.angle;
+                if (this.y < 1 || this.y > CONFIG.MAP_SIZE - 1) this.angle = -this.angle;
+                
+                this.x = Math.max(1, Math.min(CONFIG.MAP_SIZE - 1, this.x));
+                this.y = Math.max(1, Math.min(CONFIG.MAP_SIZE - 1, this.y));
+                
+                // Walking animation
+                this.walkTimer += deltaTime;
+                if (this.walkTimer > 0.15) {
+                    this.walkFrame = (this.walkFrame + 1) % 4;
+                    this.walkTimer = 0;
+                }
+            }
+
+            checkCollision(x, y) {
+                for (const building of gameMap.buildings) {
+                    if (x + this.size > building.x && x - this.size < building.x + building.width &&
+                        y + this.size > building.y && y - this.size < building.y + building.height) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            draw(context, offsetX, offsetY, scale) {
+                if (this.state === 'dead') return;
+                
+                const screenX = (this.x * CONFIG.CELL_SIZE - offsetX) * scale;
+                const screenY = (this.y * CONFIG.CELL_SIZE - offsetY) * scale;
+                const size = this.size * CONFIG.CELL_SIZE * scale;
+                
+                context.save();
+                context.translate(screenX, screenY);
+                
+                // Shadow
+                context.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                context.beginPath();
+                context.ellipse(2, 2, size, size * 0.6, 0, 0, Math.PI * 2);
+                context.fill();
+                
+                // Body
+                context.fillStyle = this.color;
+                context.beginPath();
+                context.arc(0, 0, size, 0, Math.PI * 2);
+                context.fill();
+                
+                // Head
+                context.fillStyle = '#f5d0a9';
+                context.beginPath();
+                context.arc(0, 0, size * 0.6, 0, Math.PI * 2);
+                context.fill();
+                
+                context.restore();
+            }
+
+            takeDamage(amount) {
+                this.health -= amount;
+                if (this.health <= 0) {
+                    this.state = 'dead';
+                    // Increase wanted level
+                    if (!this.isPolice) {
+                        increaseWantedLevel(1);
+                    } else {
+                        increaseWantedLevel(2);
+                    }
+                }
+            }
+        }
+
+        // ============================================================
+        // POLICE OFFICER CLASS
+        // ============================================================
+        class PoliceOfficer extends NPC {
+            constructor(x, y) {
+                super(x, y);
+                this.color = '#1a3a7a';
+                this.health = 80;
+                this.isPolice = true;
+                this.shootTimer = 0;
+                this.state = 'patrolling';
+            }
+
+            update(deltaTime) {
+                if (this.state === 'dead') return;
+                
+                const distToPlayer = Math.hypot(player.x - this.x, player.y - this.y);
+                
+                // Chase player if wanted
+                if (gameState.wantedLevel > 0 && distToPlayer < 20) {
+                    this.state = 'chasing';
+                    this.angle = Math.atan2(player.y - this.y, player.x - this.x);
+                    
+                    // Shoot at player if close enough
+                    if (distToPlayer < 8 && !player.inVehicle) {
+                        this.shootTimer -= deltaTime;
+                        if (this.shootTimer <= 0) {
+                            this.shoot();
+                            this.shootTimer = 0.8;
+                        }
+                    }
+                } else {
+                    this.state = 'patrolling';
+                }
+                
+                super.update(deltaTime);
+            }
+
+            shoot() {
+                const spread = (Math.random() - 0.5) * 0.2;
+                const bulletAngle = this.angle + spread;
+                
+                bullets.push({
+                    x: this.x,
+                    y: this.y,
+                    vx: Math.cos(bulletAngle) * CONFIG.BULLET_SPEED * 0.7,
+                    vy: Math.sin(bulletAngle) * CONFIG.BULLET_SPEED * 0.7,
+                    damage: 10,
+                    color: '#0066ff',
+                    isPlayerBullet: false
+                });
+            }
+
+            draw(context, offsetX, offsetY, scale) {
+                if (this.state === 'dead') return;
+                
+                const screenX = (this.x * CONFIG.CELL_SIZE - offsetX) * scale;
+                const screenY = (this.y * CONFIG.CELL_SIZE - offsetY) * scale;
+                const size = this.size * CONFIG.CELL_SIZE * scale;
+                
+                context.save();
+                context.translate(screenX, screenY);
+                
+                // Shadow
+                context.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                context.beginPath();
+                context.ellipse(2, 2, size, size * 0.6, 0, 0, Math.PI * 2);
+                context.fill();
+                
+                // Body (police blue)
+                context.fillStyle = '#1a3a7a';
+                context.beginPath();
+                context.arc(0, 0, size, 0, Math.PI * 2);
+                context.fill();
+                
+                // Badge
+                context.fillStyle = '#ffd700';
+                context.beginPath();
+                context.arc(0, -size * 0.3, size * 0.2, 0, Math.PI * 2);
+                context.fill();
+                
+                // Head
+                context.fillStyle = '#f5d0a9';
+                context.beginPath();
+                context.arc(0, 0, size * 0.55, 0, Math.PI * 2);
+                context.fill();
+                
+                // Gun
+                if (gameState.wantedLevel > 0) {
+                    context.rotate(this.angle);
+                    context.fillStyle = '#333';
+                    context.fillRect(size * 0.5, -2, size * 0.8, 4);
+                }
+                
+                context.restore();
+            }
+        }
+
+        // ============================================================
+        // NPC CAR CLASS
+        // ============================================================
+        class NPCCar {
+            constructor(x, y, isPolice = false) {
+                this.x = x;
+                this.y = y;
+                this.angle = Math.random() * Math.PI * 2;
+                this.speed = 2 + Math.random();
+                this.width = 1.3;
+                this.height = 0.7;
+                this.isPolice = isPolice;
+                this.color = isPolice ? '#1a3a7a' : `hsl(${Math.random() * 360}, 70%, 40%)`;
+                this.health = 100;
+                this.state = 'driving';
+                this.changeTimer = 0;
+                this.sirenPhase = 0;
+            }
+
+            update(deltaTime) {
+                if (this.state === 'destroyed') return;
+                
+                this.changeTimer -= deltaTime;
+                
+                // Police chase logic
+                if (this.isPolice && gameState.wantedLevel > 0) {
+                    const distToPlayer = Math.hypot(player.x - this.x, player.y - this.y);
+                    if (distToPlayer < 25) {
+                        this.angle = Math.atan2(player.y - this.y, player.x - this.x);
+                        this.speed = 3 + gameState.wantedLevel * 0.5;
+                    }
+                    this.sirenPhase += deltaTime * 10;
+                }
+                
+                // Random direction changes for civilian cars
+                if (this.changeTimer <= 0 && !this.isPolice) {
+                    // Try to stay on roads
+                    const onHRoad = gameMap.roads.horizontal.some(r => Math.abs(this.y - r) < 1);
+                    const onVRoad = gameMap.roads.vertical.some(r => Math.abs(this.x - r) < 1);
+                    
+                    if (Math.random() < 0.3) {
+                        this.angle += (Math.random() - 0.5) * Math.PI / 2;
+                    }
+                    this.changeTimer = 2 + Math.random() * 4;
+                }
+                
+                // Move
+                const newX = this.x + Math.cos(this.angle) * this.speed * deltaTime;
+                const newY = this.y + Math.sin(this.angle) * this.speed * deltaTime;
+                
+                if (!this.checkCollision(newX, newY)) {
+                    this.x = newX;
+                    this.y = newY;
+                } else {
+                    this.angle += Math.PI / 2;
+                }
+                
+                // Bounds
+                if (this.x < 2 || this.x > CONFIG.MAP_SIZE - 2) this.angle = Math.PI - this.angle;
+                if (this.y < 2 || this.y > CONFIG.MAP_SIZE - 2) this.angle = -this.angle;
+                
+                this.x = Math.max(2, Math.min(CONFIG.MAP_SIZE - 2, this.x));
+                this.y = Math.max(2, Math.min(CONFIG.MAP_SIZE - 2, this.y));
+            }
+
+            checkCollision(x, y) {
+                for (const building of gameMap.buildings) {
+                    if (x + this.width / 2 > building.x && x - this.width / 2 < building.x + building.width &&
+                        y + this.height / 2 > building.y && y - this.height / 2 < building.y + building.height) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            draw(context, offsetX, offsetY, scale) {
+                if (this.state === 'destroyed') return;
+                
+                context.save();
+                
+                const screenX = (this.x * CONFIG.CELL_SIZE - offsetX) * scale;
+                const screenY = (this.y * CONFIG.CELL_SIZE - offsetY) * scale;
+                
+                context.translate(screenX, screenY);
+                context.rotate(this.angle);
+                
+                const carW = this.width * CONFIG.CELL_SIZE * scale;
+                const carH = this.height * CONFIG.CELL_SIZE * scale;
+                
+                // Shadow
+                context.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                context.fillRect(-carW / 2 + 3, -carH / 2 + 3, carW, carH);
+                
+                // Body
+                context.fillStyle = this.color;
+                context.fillRect(-carW / 2, -carH / 2, carW, carH);
+                
+                // Windows
+                context.fillStyle = '#1a1a2e';
+                context.fillRect(carW * 0.05, -carH * 0.3, carW * 0.2, carH * 0.6);
+                
+                // Police siren
+                if (this.isPolice && gameState.wantedLevel > 0) {
+                    const sirenColor = Math.sin(this.sirenPhase) > 0 ? '#ff0000' : '#0000ff';
+                    context.fillStyle = sirenColor;
+                    context.fillRect(-carW * 0.15, -carH / 2 - 4, carW * 0.3, 4);
+                }
+                
+                context.restore();
+            }
+
+            takeDamage(amount) {
+                this.health -= amount;
+                if (this.health <= 0) {
+                    this.state = 'destroyed';
+                    if (this.isPolice) {
+                        increaseWantedLevel(2);
+                    }
+                }
+            }
+        }
+
+        // ============================================================
+        // WANTED LEVEL SYSTEM
+        // ============================================================
+        function increaseWantedLevel(amount) {
+            gameState.wantedLevel = Math.min(5, gameState.wantedLevel + amount);
+            gameState.wantedTimer = 30; // 30 seconds to cool down
+            updateWantedDisplay();
+            
+            // Spawn police based on wanted level
+            spawnPolice();
+        }
+
+        function updateWantedLevel(deltaTime) {
+            if (gameState.wantedLevel > 0 && !inputState.shooting) {
+                gameState.wantedTimer -= deltaTime;
+                if (gameState.wantedTimer <= 0) {
+                    gameState.wantedLevel = Math.max(0, gameState.wantedLevel - 1);
+                    gameState.wantedTimer = 20;
+                    updateWantedDisplay();
+                }
+            }
+        }
+
+        function spawnPolice() {
+            const spawnCount = gameState.wantedLevel;
+            
+            // Spawn police officers
+            for (let i = policeOfficers.length; i < spawnCount * 2; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 15 + Math.random() * 10;
+                const x = player.x + Math.cos(angle) * dist;
+                const y = player.y + Math.sin(angle) * dist;
+                
+                if (x > 1 && x < CONFIG.MAP_SIZE - 1 && y > 1 && y < CONFIG.MAP_SIZE - 1) {
+                    policeOfficers.push(new PoliceOfficer(x, y));
+                }
+            }
+            
+            // Spawn police cars
+            for (let i = policeCars.length; i < spawnCount; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 20 + Math.random() * 10;
+                const x = player.x + Math.cos(angle) * dist;
+                const y = player.y + Math.sin(angle) * dist;
+                
+                if (x > 2 && x < CONFIG.MAP_SIZE - 2 && y > 2 && y < CONFIG.MAP_SIZE - 2) {
+                    policeCars.push(new NPCCar(x, y, true));
+                }
+            }
+        }
+
+        function updateWantedDisplay() {
+            const starsDiv = document.getElementById('wantedStars');
+            let stars = '';
+            for (let i = 0; i < 5; i++) {
+                if (i < gameState.wantedLevel) {
+                    stars += '⭐';
+                } else {
+                    stars += '☆';
+                }
+            }
+            starsDiv.textContent = stars;
+        }
+
+        // ============================================================
+        // VEHICLE TOGGLE
+        // ============================================================
+        function toggleVehicle() {
+            if (player.inVehicle) {
+                // Exit vehicle
+                player.inVehicle = false;
+                player.velocity = 0;
+                playerCar = {
+                    x: player.x,
+                    y: player.y,
+                    angle: player.angle,
+                    color: '#e74c3c'
+                };
+                // Move player slightly away from car
+                player.x += Math.cos(player.angle + Math.PI / 2) * 1;
+                player.y += Math.sin(player.angle + Math.PI / 2) * 1;
+                
+                document.getElementById('modeIndicator').textContent = '🚶 Пешком';
+                document.getElementById('speedometer').style.display = 'none';
+            } else {
+                // Try to enter vehicle
+                if (playerCar) {
+                    const dist = Math.hypot(player.x - playerCar.x, player.y - playerCar.y);
+                    if (dist < 2) {
+                        player.inVehicle = true;
+                        player.x = playerCar.x;
+                        player.y = playerCar.y;
+                        player.angle = playerCar.angle;
+                        playerCar = null;
+                        
+                        document.getElementById('modeIndicator').textContent = '🚗 В машине';
+                        document.getElementById('speedometer').style.display = 'block';
+                    }
+                }
+                
+                // Try to enter NPC car
+                for (let i = npcCars.length - 1; i >= 0; i--) {
+                    const car = npcCars[i];
+                    const dist = Math.hypot(player.x - car.x, player.y - car.y);
+                    if (dist < 2 && car.state !== 'destroyed') {
+                        player.inVehicle = true;
+                        player.x = car.x;
+                        player.y = car.y;
+                        player.angle = car.angle;
+                        npcCars.splice(i, 1);
+                        
+                        if (car.isPolice) {
+                            increaseWantedLevel(1);
+                        }
+                        
+                        document.getElementById('modeIndicator').textContent = '🚗 В машине';
+                        document.getElementById('speedometer').style.display = 'block';
+                        break;
+                    }
+                }
+            }
+        }
+
+        // ============================================================
+        // BULLETS UPDATE
+        // ============================================================
+        function updateBullets(deltaTime) {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                
+                bullet.x += bullet.vx * deltaTime;
+                bullet.y += bullet.vy * deltaTime;
+                
+                // Check bounds
+                if (bullet.x < 0 || bullet.x > CONFIG.MAP_SIZE ||
+                    bullet.y < 0 || bullet.y > CONFIG.MAP_SIZE) {
+                    bullets.splice(i, 1);
+                    continue;
+                }
+                
+                // Check building collision
+                let hitBuilding = false;
+                for (const building of gameMap.buildings) {
+                    if (bullet.x > building.x && bullet.x < building.x + building.width &&
+                        bullet.y > building.y && bullet.y < building.y + building.height) {
+                        hitBuilding = true;
+                        break;
+                    }
+                }
+                if (hitBuilding) {
+                    bullets.splice(i, 1);
+                    continue;
+                }
+                
+                // Check NPC hit
+                if (bullet.isPlayerBullet) {
+                    // Hit civilians
+                    for (const npc of npcs) {
+                        if (npc.state !== 'dead') {
+                            const dist = Math.hypot(bullet.x - npc.x, bullet.y - npc.y);
+                            if (dist < 0.5) {
+                                npc.takeDamage(bullet.damage);
+                                bullets.splice(i, 1);
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Hit police
+                    for (const officer of policeOfficers) {
+                        if (officer.state !== 'dead') {
+                            const dist = Math.hypot(bullet.x - officer.x, bullet.y - officer.y);
+                            if (dist < 0.5) {
+                                officer.takeDamage(bullet.damage);
+                                bullets.splice(i, 1);
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Hit cars
+                    for (const car of [...npcCars, ...policeCars]) {
+                        if (car.state !== 'destroyed') {
+                            const dist = Math.hypot(bullet.x - car.x, bullet.y - car.y);
+                            if (dist < 1) {
+                                car.takeDamage(bullet.damage);
+                                bullets.splice(i, 1);
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    // Police bullet - hit player
+                    const dist = Math.hypot(bullet.x - player.x, bullet.y - player.y);
+                    if (dist < 0.5) {
+                        player.takeDamage(bullet.damage);
+                        bullets.splice(i, 1);
+                    }
+                }
+            }
+        }
+
+        function drawBullets(context, offsetX, offsetY, scale) {
+            bullets.forEach(bullet => {
+                const screenX = (bullet.x * CONFIG.CELL_SIZE - offsetX) * scale;
+                const screenY = (bullet.y * CONFIG.CELL_SIZE - offsetY) * scale;
+                
+                context.fillStyle = bullet.color;
+                context.beginPath();
+                context.arc(screenX, screenY, 4 * scale, 0, Math.PI * 2);
+                context.fill();
+                
+                // Trail
+                context.strokeStyle = bullet.color;
+                context.lineWidth = 2 * scale;
+                context.globalAlpha = 0.5;
+                context.beginPath();
+                context.moveTo(screenX, screenY);
+                context.lineTo(
+                    screenX - bullet.vx * CONFIG.CELL_SIZE * scale * 0.3,
+                    screenY - bullet.vy * CONFIG.CELL_SIZE * scale * 0.3
+                );
+                context.stroke();
+                context.globalAlpha = 1;
+            });
+        }
+
+        // ============================================================
+        // UI UPDATES
+        // ============================================================
+        function updateWeaponDisplay() {
+            const weapon = WEAPONS[player.currentWeapon];
+            document.getElementById('currentWeapon').textContent = weapon.icon + ' ' + weapon.name;
+        }
+
+        function updateHealthDisplay() {
+            const healthFill = document.getElementById('healthFill');
+            const healthText = document.getElementById('healthText');
+            const percentage = (player.health / player.maxHealth) * 100;
+            healthFill.style.width = percentage + '%';
+            healthText.textContent = Math.round(player.health);
+            
+            // Color based on health
+            if (percentage > 60) {
+                healthFill.style.background = 'linear-gradient(90deg, #27ae60, #2ecc71)';
+            } else if (percentage > 30) {
+                healthFill.style.background = 'linear-gradient(90deg, #f39c12, #f1c40f)';
+            } else {
+                healthFill.style.background = 'linear-gradient(90deg, #c0392b, #e74c3c)';
+            }
+        }
+
+        function updateSpeedometer() {
+            if (!player.inVehicle) return;
+            
+            const speedValue = document.getElementById('speedValue');
+            const boostIndicator = document.getElementById('boostIndicator');
+            
+            speedValue.textContent = player.getSpeedKmh();
+            
+            if (inputState.shift && Math.abs(player.velocity) > 1) {
+                boostIndicator.textContent = '🚀 BOOST';
+            } else {
+                boostIndicator.textContent = '';
+            }
+        }
+
+        // ============================================================
+        // RENDERING FUNCTIONS
+        // ============================================================
+        function drawMap(context, offsetX, offsetY, scale = 1) {
+            const cellSize = CONFIG.CELL_SIZE * scale;
+            
+            // Grass background
+            context.fillStyle = '#2d5a27';
+            context.fillRect(0, 0, context.canvas.width, context.canvas.height);
+            
+            drawParks(context, offsetX, offsetY, scale);
+            drawRoads(context, offsetX, offsetY, scale);
+            drawIntersections(context, offsetX, offsetY, scale);
+            drawBuildings(context, offsetX, offsetY, scale);
+        }
+
+        function drawParks(context, offsetX, offsetY, scale) {
+            const cellSize = CONFIG.CELL_SIZE * scale;
+            
+            gameMap.parks.forEach(park => {
+                const parkX = (park.x * CONFIG.CELL_SIZE - offsetX) * scale;
+                const parkY = (park.y * CONFIG.CELL_SIZE - offsetY) * scale;
+                const parkW = park.width * cellSize;
+                const parkH = park.height * cellSize;
+                
+                context.fillStyle = '#4a9c44';
+                context.fillRect(parkX, parkY, parkW, parkH);
+                
+                context.strokeStyle = '#2d5a27';
+                context.lineWidth = 2 * scale;
+                context.strokeRect(parkX, parkY, parkW, parkH);
+                
+                park.trees.forEach(tree => {
+                    const treeX = (tree.x * CONFIG.CELL_SIZE - offsetX) * scale;
+                    const treeY = (tree.y * CONFIG.CELL_SIZE - offsetY) * scale;
+                    const treeR = tree.radius * cellSize;
+                    
+                    context.fillStyle = '#1e4a1a';
+                    context.beginPath();
+                    context.arc(treeX + 3 * scale, treeY + 3 * scale, treeR, 0, Math.PI * 2);
+                    context.fill();
+                    
+                    context.fillStyle = '#228b22';
+                    context.beginPath();
+                    context.arc(treeX, treeY, treeR, 0, Math.PI * 2);
+                    context.fill();
+                });
+            });
+        }
+
+        function drawRoads(context, offsetX, offsetY, scale) {
+            const cellSize = CONFIG.CELL_SIZE * scale;
+            const roadWidth = cellSize * 1.2;
+            const lineWidth = CONFIG.ROAD_LINE_WIDTH * scale;
+            
+            // Horizontal roads
+            gameMap.roads.horizontal.forEach(roadY => {
+                const screenY = (roadY * CONFIG.CELL_SIZE - offsetY) * scale;
+                const startX = (0 - offsetX) * scale;
+                const endX = (CONFIG.MAP_SIZE * CONFIG.CELL_SIZE - offsetX) * scale;
+                
+                context.fillStyle = '#333';
+                context.fillRect(startX, screenY - roadWidth / 2, endX - startX, roadWidth);
+                
+                context.strokeStyle = '#000';
+                context.lineWidth = lineWidth;
+                context.beginPath();
+                context.moveTo(startX, screenY - roadWidth / 2);
+                context.lineTo(endX, screenY - roadWidth / 2);
+                context.moveTo(startX, screenY + roadWidth / 2);
+                context.lineTo(endX, screenY + roadWidth / 2);
+                context.stroke();
+                
+                context.strokeStyle = '#ffcc00';
+                context.lineWidth = 2 * scale;
+                context.setLineDash([15 * scale, 10 * scale]);
+                context.beginPath();
+                context.moveTo(startX, screenY);
+                context.lineTo(endX, screenY);
+                context.stroke();
+                context.setLineDash([]);
+            });
+            
+            // Vertical roads
+            gameMap.roads.vertical.forEach(roadX => {
+                const screenX = (roadX * CONFIG.CELL_SIZE - offsetX) * scale;
+                const startY = (0 - offsetY) * scale;
+                const endY = (CONFIG.MAP_SIZE * CONFIG.CELL_SIZE - offsetY) * scale;
+                
+                context.fillStyle = '#333';
+                context.fillRect(screenX - roadWidth / 2, startY, roadWidth, endY - startY);
+                
+                context.strokeStyle = '#000';
+                context.lineWidth = lineWidth;
+                context.beginPath();
+                context.moveTo(screenX - roadWidth / 2, startY);
+                context.lineTo(screenX - roadWidth / 2, endY);
+                context.moveTo(screenX + roadWidth / 2, startY);
+                context.lineTo(screenX + roadWidth / 2, endY);
+                context.stroke();
+                
+                context.strokeStyle = '#ffcc00';
+                context.lineWidth = 2 * scale;
+                context.setLineDash([15 * scale, 10 * scale]);
+                context.beginPath();
+                context.moveTo(screenX, startY);
+                context.lineTo(screenX, endY);
+                context.stroke();
+                context.setLineDash([]);
+            });
+        }
+
+        function drawIntersections(context, offsetX, offsetY, scale) {
+            const cellSize = CONFIG.CELL_SIZE * scale;
+            const intersectionSize = cellSize * 1.4;
+            const lineWidth = (CONFIG.ROAD_LINE_WIDTH + CONFIG.INTERSECTION_EXTRA) * scale;
+            
+            gameMap.intersections.forEach(intersection => {
+                const screenX = (intersection.x * CONFIG.CELL_SIZE - offsetX) * scale;
+                const screenY = (intersection.y * CONFIG.CELL_SIZE - offsetY) * scale;
+                
+                context.fillStyle = '#3a3a3a';
+                context.fillRect(
+                    screenX - intersectionSize / 2,
+                    screenY - intersectionSize / 2,
+                    intersectionSize,
+                    intersectionSize
+                );
+            });
+        }
+
+        function drawBuildings(context, offsetX, offsetY, scale) {
+            const cellSize = CONFIG.CELL_SIZE * scale;
+            
+            gameMap.buildings.forEach(building => {
+                const bX = (building.x * CONFIG.CELL_SIZE - offsetX) * scale;
+                const bY = (building.y * CONFIG.CELL_SIZE - offsetY) * scale;
+                const bW = building.width * cellSize;
+                const bH = building.height * cellSize;
+                
+                const shadowOffset = building.floors * 2 * scale;
+                context.fillStyle = 'rgba(0, 0, 0, 0.4)';
+                context.fillRect(bX + shadowOffset, bY + shadowOffset, bW, bH);
+                
+                context.fillStyle = building.color;
+                context.fillRect(bX, bY, bW, bH);
+                
+                context.strokeStyle = '#222';
+                context.lineWidth = 2 * scale;
+                context.strokeRect(bX, bY, bW, bH);
+                
+                // Windows
+                const windowSize = 4 * scale;
+                const windowGap = 8 * scale;
+                
+                for (let wx = bX + windowGap; wx < bX + bW - windowSize; wx += windowGap) {
+                    for (let wy = bY + windowGap; wy < bY + bH - windowSize; wy += windowGap) {
+                        context.fillStyle = Math.random() < 0.2 ? '#fff8aa' : '#87ceeb';
+                        context.fillRect(wx, wy, windowSize, windowSize);
+                    }
+                }
+            });
+        }
+
+        function drawParkedCar(context, offsetX, offsetY, scale) {
+            if (!playerCar) return;
+            
+            context.save();
+            
+            const screenX = (playerCar.x * CONFIG.CELL_SIZE - offsetX) * scale;
+            const screenY = (playerCar.y * CONFIG.CELL_SIZE - offsetY) * scale;
+            
+            context.translate(screenX, screenY);
+            context.rotate(playerCar.angle);
+            
+            const carW = 1.4 * CONFIG.CELL_SIZE * scale;
+            const carH = 0.8 * CONFIG.CELL_SIZE * scale;
+            
+            context.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            context.fillRect(-carW / 2 + 4 * scale, -carH / 2 + 4 * scale, carW, carH);
+            
+            context.fillStyle = playerCar.color;
+            context.fillRect(-carW / 2, -carH / 2, carW, carH);
+            
+            context.strokeStyle = '#c0392b';
+            context.lineWidth = 2 * scale;
+            context.strokeRect(-carW / 2, -carH / 2, carW, carH);
+            
+            context.fillStyle = '#1a1a2e';
+            context.fillRect(carW * 0.08, -carH * 0.3, carW * 0.25, carH * 0.6);
+            
+            context.restore();
+        }
+
+        function drawMiniMap() {
+            const totalMapPixels = CONFIG.MAP_SIZE * CONFIG.CELL_SIZE;
+            const miniScale = miniMapCanvas.width / totalMapPixels;
+            
+            miniCtx.fillStyle = '#1a1a2e';
+            miniCtx.fillRect(0, 0, miniMapCanvas.width, miniMapCanvas.height);
+            
+            drawMap(miniCtx, 0, 0, miniScale);
+            
+            // Draw NPCs on minimap
+            npcs.forEach(npc => {
+                if (npc.state !== 'dead') {
+                    miniCtx.fillStyle = '#00ff00';
+                    miniCtx.beginPath();
+                    miniCtx.arc(npc.x * CONFIG.CELL_SIZE * miniScale, npc.y * CONFIG.CELL_SIZE * miniScale, 2, 0, Math.PI * 2);
+                    miniCtx.fill();
+                }
+            });
+            
+            // Draw police on minimap
+            policeOfficers.forEach(officer => {
+                if (officer.state !== 'dead') {
+                    miniCtx.fillStyle = '#0000ff';
+                    miniCtx.beginPath();
+                    miniCtx.arc(officer.x * CONFIG.CELL_SIZE * miniScale, officer.y * CONFIG.CELL_SIZE * miniScale, 2, 0, Math.PI * 2);
+                    miniCtx.fill();
+                }
+            });
+            
+            // Draw player
+            const playerMiniX = player.x * CONFIG.CELL_SIZE * miniScale;
+            const playerMiniY = player.y * CONFIG.CELL_SIZE * miniScale;
+            
+            miniCtx.shadowColor = '#ff0000';
+            miniCtx.shadowBlur = 10;
+            miniCtx.fillStyle = '#ff3333';
+            miniCtx.beginPath();
+            miniCtx.arc(playerMiniX, playerMiniY, 4, 0, Math.PI * 2);
+            miniCtx.fill();
+            miniCtx.shadowBlur = 0;
+        }
+
+        // ============================================================
+        // SPAWN NPCs
+        // ============================================================
+        function spawnNPCs() {
+            // Spawn pedestrians
+            for (let i = 0; i < CONFIG.NPC_COUNT; i++) {
+                // Spawn near roads
+                const roadIndex = Math.floor(Math.random() * gameMap.roads.horizontal.length);
+                const roadY = gameMap.roads.horizontal[roadIndex];
+                const x = 2 + Math.random() * (CONFIG.MAP_SIZE - 4);
+                const y = roadY + (Math.random() - 0.5) * 2;
+                
+                npcs.push(new NPC(x, y));
+            }
+            
+            // Spawn NPC cars on roads
+            for (let i = 0; i < CONFIG.NPC_CAR_COUNT; i++) {
+                const useHorizontal = Math.random() > 0.5;
+                let x, y;
+                
+                if (useHorizontal) {
+                    const roadY = gameMap.roads.horizontal[Math.floor(Math.random() * gameMap.roads.horizontal.length)];
+                    x = 5 + Math.random() * (CONFIG.MAP_SIZE - 10);
+                    y = roadY;
+                } else {
+                    const roadX = gameMap.roads.vertical[Math.floor(Math.random() * gameMap.roads.vertical.length)];
+                    x = roadX;
+                    y = 5 + Math.random() * (CONFIG.MAP_SIZE - 10);
+                }
+                
+                npcCars.push(new NPCCar(x, y, false));
+            }
+        }
+
+        // ============================================================
+        // GAME INITIALIZATION
+        // ============================================================
+        function initGame() {
+            generateCityMap();
+            player = new Player(CONFIG.ROAD_SPACING, CONFIG.ROAD_SPACING);
+            spawnNPCs();
+            
+            updateWeaponDisplay();
+            updateHealthDisplay();
+            updateWantedDisplay();
+            
+            gameState.lastTimestamp = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ============================================================
+        // MAIN GAME LOOP
+        // ============================================================
+        function gameLoop(timestamp) {
+            const deltaTime = Math.min((timestamp - gameState.lastTimestamp) / 1000, 0.1);
+            gameState.lastTimestamp = timestamp;
+            
+            if (!gameState.isPaused && gameState.isStarted) {
+                gameState.totalTime += deltaTime;
+                
+                // Update player
+                player.update(deltaTime);
+                
+                // Update wanted level
+                updateWantedLevel(deltaTime);
+                
+                // Update NPCs
+                npcs.forEach(npc => npc.update(deltaTime));
+                npcCars.forEach(car => car.update(deltaTime));
+                policeOfficers.forEach(officer => officer.update(deltaTime));
+                policeCars.forEach(car => car.update(deltaTime));
+                
+                // Update bullets
+                updateBullets(deltaTime);
+                
+                // Calculate camera
+                const cameraX = player.x * CONFIG.CELL_SIZE - canvas.width / 2;
+                const cameraY = player.y * CONFIG.CELL_SIZE - canvas.height / 2;
+                
+                // Clear and draw
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                drawMap(ctx, cameraX, cameraY, 1);
+                
+                // Draw parked player car
+                drawParkedCar(ctx, cameraX, cameraY, 1);
+                
+                // Draw NPC cars
+                npcCars.forEach(car => car.draw(ctx, cameraX, cameraY, 1));
+                policeCars.forEach(car => car.draw(ctx, cameraX, cameraY, 1));
+                
+                // Draw NPCs
+                npcs.forEach(npc => npc.draw(ctx, cameraX, cameraY, 1));
+                policeOfficers.forEach(officer => officer.draw(ctx, cameraX, cameraY, 1));
+                
+                // Draw player
+                player.draw(ctx, cameraX, cameraY, 1);
+                
+                // Draw bullets
+                drawBullets(ctx, cameraX, cameraY, 1);
+                
+                // Draw minimap
+                drawMiniMap();
+                
+                // Update UI
+                updateSpeedometer();
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+    </script>
+</body>
+
+</html>

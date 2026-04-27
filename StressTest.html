@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Стресс-тест видеокарты</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            touch-action: manipulation;
+        }
+        
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        .stats {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #444;
+            z-index: 2;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        
+        .stat {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        .fps {
+            color: #0f0;
+            font-weight: bold;
+        }
+        
+        .particles-count {
+            color: #ff0;
+            font-weight: bold;
+        }
+        
+        .performance {
+            color: #0ff;
+            font-weight: bold;
+        }
+        
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            z-index: 2;
+            padding: 0 10px;
+            max-width: 100%;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #222, #444);
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            min-width: 70px;
+            user-select: none;
+        }
+        
+        .btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+        
+        .btn-add {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+        }
+        
+        .btn-remove {
+            background: linear-gradient(45deg, #c0392b, #e74c3c);
+        }
+        
+        .btn-reset {
+            background: linear-gradient(45deg, #2980b9, #3498db);
+        }
+        
+        .warning {
+            color: #f00;
+            font-weight: bold;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .fps-warning {
+            color: #ff0;
+        }
+        
+        .fps-critical {
+            color: #f00;
+            animation: blink 0.5s infinite;
+        }
+        
+        .mobile-controls {
+            display: none;
+            position: fixed;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            flex-direction: column;
+            gap: 10px;
+            z-index: 2;
+        }
+        
+        .mobile-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                bottom: 80px;
+            }
+            
+            .mobile-controls {
+                display: flex;
+            }
+            
+            .btn {
+                padding: 10px 15px;
+                font-size: 14px;
+                min-width: 60px;
+            }
+            
+            .stats {
+                padding: 10px;
+                font-size: 12px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .btn {
+                padding: 8px 12px;
+                font-size: 12px;
+                min-width: 50px;
+            }
+            
+            .mobile-row {
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="stats">
+        <div class="stat">Частиц: <span id="particlesCount" class="particles-count">0</span></div>
+        <div class="stat">FPS: <span id="fps" class="fps">0</span></div>
+        <div class="stat">Производительность: <span id="performance" class="performance">Отличная</span></div>
+        <div class="stat">Статус: <span id="status">✅ Стабильно</span></div>
+    </div>
+    
+    <div class="mobile-controls">
+        <div class="mobile-row">
+            <button class="btn btn-add" data-add="10000">+10K</button>
+            <button class="btn btn-remove" data-remove="10000">-10K</button>
+        </div>
+        <div class="mobile-row">
+            <button class="btn btn-add" data-add="1000">+1K</button>
+            <button class="btn btn-remove" data-remove="1000">-1K</button>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button class="btn btn-add" data-add="1">+1</button>
+        <button class="btn btn-add" data-add="10">+10</button>
+        <button class="btn btn-add" data-add="100">+100</button>
+        <button class="btn btn-add" data-add="1000">+1K</button>
+        <button class="btn btn-add" data-add="10000">+10K</button>
+        <button class="btn btn-remove" data-remove="1">-1</button>
+        <button class="btn btn-remove" data-remove="10">-10</button>
+        <button class="btn btn-reset" id="reset">Сброс</button>
+        <button class="btn btn-reset" id="autoStress">Авто-тест</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let particlesCount = 0;
+        let lastTime = 0;
+        let fps = 0;
+        let frameCount = 0;
+        let lastFpsUpdate = 0;
+        let autoStressMode = false;
+        let stressDirection = 1;
+        
+        // Размеры canvas
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Класс частицы
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 4;
+                this.radius = Math.random() * 3 + 1;
+                this.color = `hsl(${Math.random() * 360}, 100%, 60%)`;
+                this.life = 1;
+                this.decay = Math.random() * 0.002 + 0.001;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Отскок от границ
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+                
+                // Уменьшение жизни
+                this.life -= this.decay;
+                if (this.life <= 0) {
+                    this.reset();
+                }
+                
+                // Легкое гравитационное притяжение к центру
+                const dx = canvas.width/2 - this.x;
+                const dy = canvas.height/2 - this.y;
+                const distance = Math.sqrt(dx*dx + dy*dy);
+                
+                if (distance > 0) {
+                    this.vx += dx * 0.00001;
+                    this.vy += dy * 0.00001;
+                }
+            }
+            
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color.replace(')', `, ${this.life})`).replace('hsl', 'hsla');
+                ctx.fill();
+                
+                // Свечение
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius * 2, 0, Math.PI * 2);
+                ctx.fillStyle = this.color.replace(')', `, ${0.2 * this.life})`).replace('hsl', 'hsla');
+                ctx.fill();
+            }
+        }
+        
+        // Добавление частиц
+        function addParticles(count) {
+            const oldCount = particles.length;
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle());
+            }
+            particlesCount = particles.length;
+            updateStats();
+            console.log(`Добавлено ${count} частиц. Всего: ${particlesCount}`);
+        }
+        
+        // Удаление частиц
+        function removeParticles(count) {
+            particles.splice(0, Math.min(count, particles.length));
+            particlesCount = particles.length;
+            updateStats();
+            console.log(`Удалено ${count} частиц. Осталось: ${particlesCount}`);
+        }
+        
+        // Сброс всех частиц
+        function resetParticles() {
+            particles = [];
+            particlesCount = 0;
+            autoStressMode = false;
+            updateStats();
+            console.log('Все частицы сброшены');
+        }
+        
+        // Обновление статистики
+        function updateStats() {
+            document.getElementById('particlesCount').textContent = particlesCount.toLocaleString();
+            
+            let performanceText = 'Отличная';
+            let statusText = '✅ Стабильно';
+            let statusColor = '#0f0';
+            
+            if (particlesCount > 10000) {
+                performanceText = 'Экстремальная';
+                statusText = '⚠️ Очень высокая нагрузка';
+                statusColor = '#f00';
+            } else if (particlesCount > 5000) {
+                performanceText = 'Высокая';
+                statusText = '⚠️ Высокая нагрузка';
+                statusColor = '#ff0';
+            } else if (particlesCount > 2000) {
+                performanceText = 'Средняя';
+                statusText = '⚠️ Средняя нагрузка';
+                statusColor = '#ff0';
+            } else if (particlesCount > 500) {
+                performanceText = 'Низкая';
+                statusText = '✅ Низкая нагрузка';
+                statusColor = '#0f0';
+            }
+            
+            document.getElementById('performance').textContent = performanceText;
+            document.getElementById('status').textContent = statusText;
+            document.getElementById('status').style.color = statusColor;
+            
+            // Обновление FPS цвета
+            const fpsElement = document.getElementById('fps');
+            if (fps < 15) {
+                fpsElement.className = 'fps-critical';
+            } else if (fps < 30) {
+                fpsElement.className = 'fps-warning';
+            } else {
+                fpsElement.className = 'fps';
+            }
+        }
+        
+        // Автоматический стресс-тест
+        function startAutoStress() {
+            autoStressMode = true;
+            stressDirection = 1;
+            console.log('Авто-стресс тест запущен');
+        }
+        
+        // Основной цикл анимации
+        function animate(currentTime) {
+            // Расчет FPS
+            frameCount++;
+            if (currentTime - lastFpsUpdate >= 1000) {
+                fps = Math.round((frameCount * 1000) / (currentTime - lastFpsUpdate));
+                document.getElementById('fps').textContent = fps;
+                frameCount = 0;
+                lastFpsUpdate = currentTime;
+            }
+            
+            // Авто-стресс тест
+            if (autoStressMode) {
+                if (currentTime - lastTime > 100) {
+                    if (stressDirection === 1) {
+                        if (particlesCount < 20000) {
+                            addParticles(100);
+                        } else {
+                            stressDirection = -1;
+                        }
+                    } else {
+                        if (particlesCount > 100) {
+                            removeParticles(100);
+                        } else {
+                            stressDirection = 1;
+                        }
+                    }
+                    lastTime = currentTime;
+                }
+            }
+            
+            // Очистка canvas с эффектом размытия
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Обновление и отрисовка частиц
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+                
+                // Рисуем связи между близкими частицами
+                if (particlesCount < 1000) {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < 100) {
+                            ctx.beginPath();
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${0.2 * (1 - distance/100)})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // Обработчики кнопок
+        document.querySelectorAll('.btn-add').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const count = parseInt(btn.dataset.add);
+                addParticles(count);
+            });
+            
+            // Поддержка долгого нажатия на мобильных
+            let pressTimer;
+            btn.addEventListener('touchstart', (e) => {
+                pressTimer = setTimeout(() => {
+                    const count = parseInt(btn.dataset.add) * 10;
+                    addParticles(count);
+                }, 500);
+            });
+            
+            btn.addEventListener('touchend', () => {
+                clearTimeout(pressTimer);
+            });
+        });
+        
+        document.querySelectorAll('.btn-remove').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const count = parseInt(btn.dataset.remove);
+                removeParticles(count);
+            });
+            
+            // Поддержка долгого нажатия на мобильных
+            let pressTimer;
+            btn.addEventListener('touchstart', (e) => {
+                pressTimer = setTimeout(() => {
+                    const count = parseInt(btn.dataset.remove) * 10;
+                    removeParticles(count);
+                }, 500);
+            });
+            
+            btn.addEventListener('touchend', () => {
+                clearTimeout(pressTimer);
+            });
+        });
+        
+        document.getElementById('reset').addEventListener('click', resetParticles);
+        document.getElementById('autoStress').addEventListener('click', startAutoStress);
+        
+        // Запуск
+        addParticles(100); // Начальное количество частиц
+        animate(0);
+        
+        // Информация для пользователя
+        console.log('Стресс-тест телефона запущен!');
+        console.log('Добавляйте частицы кнопками +1, +10, +100, +1000, +10000');
+        console.log('Следите за FPS и производительностью в левом верхнем углу');
+    </script>
+</body>
+</html>

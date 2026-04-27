@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Parkour Obby</title>
+    <link rel="icon" href="logo.jpg">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        body { margin: 0; overflow: hidden; user-select: none; }
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            mix-blend-mode: difference;
+        }
+        #crosshair::before, #crosshair::after {
+            content: '';
+            position: absolute;
+            background: white;
+        }
+        #crosshair::before { top: 9px; left: 0; width: 20px; height: 2px; }
+        #crosshair::after { top: 0; left: 9px; width: 2px; height: 20px; }
+        
+        #instructions {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-family: 'Minecraft', monospace, sans-serif;
+            text-align: center;
+            z-index: 10;
+        }
+        
+        #hud {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            font-family: monospace;
+            font-size: 20px;
+            text-shadow: 2px 2px 0 #000;
+            pointer-events: none;
+        }
+
+        .mc-btn {
+            background-color: #727272;
+            border: 2px solid #000;
+            border-top-color: #dbdbdb;
+            border-left-color: #dbdbdb;
+            color: white;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            font-family: monospace;
+            text-shadow: 1px 1px 0 #000;
+        }
+        .mc-btn:active {
+            border-top-color: #000;
+            border-left-color: #000;
+            border-bottom-color: #dbdbdb;
+            border-right-color: #dbdbdb;
+        }
+
+        /* Minecraft-ish font fallback */
+        @font-face {
+            font-family: 'Minecraft';
+            src: local('Courier New');
+        }
+    </style>
+</head>
+<body>
+    <div id="crosshair"></div>
+    <div id="instructions">
+        <h1 class="text-4xl mb-4 font-bold text-green-500" style="text-shadow: 2px 2px 0 #000;">PARKOUR OBBY</h1>
+        <p class="mb-2 text-xl">Click to Play</p>
+        <p class="text-gray-300 mb-6">W, A, S, D to Move | SPACE to Jump | MOUSE to Look</p>
+        <button id="startBtn" class="mc-btn">START GAME</button>
+    </div>
+    <div id="hud">
+        Deaths: <span id="deathCount">0</span> | Level: <span id="levelDisplay">1</span> | Time: <span id="timer">0.00</span>s
+    </div>
+    <div id="damageOverlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: red; opacity: 0; pointer-events: none; transition: opacity 0.2s;"></div>
+
+    <!-- Three.js from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // --- TEXTURE GENERATION ---
+        // Generate a simple blocky noise texture using canvas
+        function createBlockTexture(color, noiseColor) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            
+            // Base color
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, 64, 64);
+            
+            // Noise
+            for (let i = 0; i < 400; i++) {
+                ctx.fillStyle = noiseColor;
+                ctx.globalAlpha = 0.1 + Math.random() * 0.1;
+                const x = Math.floor(Math.random() * 64);
+                const y = Math.floor(Math.random() * 64);
+                const w = Math.floor(Math.random() * 4) + 1;
+                const h = Math.floor(Math.random() * 4) + 1;
+                ctx.fillRect(x, y, w, h);
+            }
+            
+            // Border for blocky look
+            ctx.globalAlpha = 0.2;
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(0, 0, 64, 64);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.magFilter = THREE.NearestFilter; // Pixelated look
+            texture.minFilter = THREE.NearestFilter;
+            return texture;
+        }
+
+        const textures = {
+            grass_top: createBlockTexture('#5b9e38', '#386920'),
+            grass_side: createBlockTexture('#705131', '#4a331d'),
+            dirt: createBlockTexture('#705131', '#4a331d'),
+            stone: createBlockTexture('#7d7d7d', '#525252'),
+            gold: createBlockTexture('#ffd700', '#ffaa00'),
+            lava: createBlockTexture('#cf1020', '#ff4500')
+        };
+        
+        // --- GAME VARIABLES ---
+        let camera, scene, renderer;
+        let controls;
+        let objects = []; // Platforms
+        let raycaster;
+        
+        let moveForward = false;
+        let moveBackward = false;
+        let moveLeft = false;
+        let moveRight = false;
+        let canJump = false;
+        
+        let prevTime = performance.now();
+        const velocity = new THREE.Vector3();
+        const direction = new THREE.Vector3();
+        
+        const PLAYER_HEIGHT = 1.8;
+        const PLAYER_SPEED = 10.0; // Reduced for better control
+        const PLAYER_JUMP = 12.0; // Slightly floaty like MC
+        const GRAVITY = 30.0;
+        
+        let isLocked = false;
+        let deaths = 0;
+        let currentLevel = 1;
+        let levelStartTime = performance.now();
+        let hasStarted = false;
+
+        // Player collision box (simple point/radius check approximation for now, or raycasting)
+        // We will use a simplified collision system: Raycasting downwards for ground detection
+        // and simple distance checks for walls if needed, but for parkour, ground is most important.
+        
+        const playerCollider = {
+            radius: 0.3,
+            height: 1.8
+        };
+
+        // --- LEVEL DESIGN ---
+        const levels = [
+            // Level 1
+            [
+                { x: 0, y: -1, z: 0, type: 'start' }, { x: 1, y: -1, z: 0, type: 'grass' }, { x: -1, y: -1, z: 0, type: 'grass' },
+                { x: 0, y: -1, z: 1, type: 'grass' }, { x: 0, y: -1, z: -1, type: 'grass' },
+                { x: 0, y: 0, z: -4, type: 'grass' }, { x: 0, y: 1, z: -7, type: 'grass' }, { x: 0, y: 2, z: -10, type: 'grass' },
+                { x: 0, y: 2, z: -14, type: 'stone' }, { x: 3, y: 3, z: -14, type: 'stone' }, { x: 6, y: 4, z: -14, type: 'stone' },
+                { x: 9, y: 5, z: -14, type: 'dirt' }, { x: 9, y: 5, z: -11, type: 'dirt' },
+                { x: 9, y: 6, z: -8, type: 'grass' }, { x: 11, y: 7, z: -8, type: 'grass' }, { x: 11, y: 8, z: -6, type: 'grass' },
+                { x: 9, y: 9, z: -6, type: 'grass' }, { x: 6, y: 10, z: -8, type: 'stone' },
+                { x: 3, y: 10, z: -8, type: 'stone' }, { x: 0, y: 11, z: -8, type: 'stone' },
+                { x: -3, y: 12, z: -11, type: 'grass' }, { x: -6, y: 13, z: -14, type: 'grass' }, { x: -9, y: 14, z: -17, type: 'grass' },
+                { x: -12, y: 14, z: -17, type: 'stone' }, { x: -15, y: 14, z: -17, type: 'stone' }, { x: -18, y: 15, z: -17, type: 'gold' }
+            ],
+            // Level 2: Harder
+            [
+                { x: 0, y: -1, z: 0, type: 'start' }, { x: 0, y: -1, z: 0, type: 'stone' },
+                { x: 4, y: 0, z: 0, type: 'stone' }, 
+                { x: 8, y: 1, z: 0, type: 'stone' },
+                { x: 12, y: 1, z: 4, type: 'stone' }, // Corner
+                { x: 8, y: 2, z: 4, type: 'dirt' }, // Back
+                { x: 4, y: 3, z: 4, type: 'dirt' },
+                { x: 4, y: 4, z: 8, type: 'grass' },
+                { x: 8, y: 5, z: 8, type: 'grass' },
+                { x: 12, y: 6, z: 8, type: 'grass' },
+                { x: 16, y: 7, z: 8, type: 'grass' },
+                // Floating Islands
+                { x: 20, y: 9, z: 4, type: 'stone' },
+                { x: 24, y: 11, z: 0, type: 'stone' },
+                { x: 28, y: 13, z: 4, type: 'stone' },
+                { x: 32, y: 15, z: 8, type: 'gold' }
+            ]
+        ];
+
+        let currentLevelBlocks = [];
+        let startPosition = new THREE.Vector3(0, 2, 0);
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB); // Sky blue
+            scene.fog = new THREE.Fog(0x87CEEB, 10, 60);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(50, 100, 50);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+
+            // Setup Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            // Lava Floor
+            const lavaGeo = new THREE.PlaneGeometry(200, 200);
+            const lavaMat = new THREE.MeshLambertMaterial({ map: textures.lava });
+            lavaMat.map.wrapS = THREE.RepeatWrapping;
+            lavaMat.map.wrapT = THREE.RepeatWrapping;
+            lavaMat.map.repeat.set(20, 20);
+            const lava = new THREE.Mesh(lavaGeo, lavaMat);
+            lava.rotation.x = -Math.PI / 2;
+            lava.position.y = -10;
+            scene.add(lava);
+
+            // Controls logic (PointerLock)
+            // We implement a custom wrapper around camera rotation
+            const instructions = document.getElementById('instructions');
+            const startBtn = document.getElementById('startBtn');
+
+            startBtn.addEventListener('click', function () {
+                document.body.requestPointerLock();
+            });
+
+            document.addEventListener('pointerlockchange', function () {
+                if (document.pointerLockElement === document.body) {
+                    isLocked = true;
+                    instructions.style.display = 'none';
+                } else {
+                    isLocked = false;
+                    instructions.style.display = 'flex';
+                }
+            });
+
+            document.addEventListener('mousemove', onMouseMove, false);
+            document.addEventListener('keydown', onKeyDown, false);
+            document.addEventListener('keyup', onKeyUp, false);
+            window.addEventListener('resize', onWindowResize, false);
+
+            loadLevel(0);
+            
+            // Initial spawn
+            respawn();
+
+            animate();
+        }
+        
+        function loadLevel(index) {
+            // Clear existing blocks
+            currentLevelBlocks.forEach(mesh => scene.remove(mesh));
+            currentLevelBlocks = [];
+            objects = [];
+
+            const levelData = levels[index % levels.length];
+            
+            const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
+            
+            // Materials
+            const materials = {
+                grass: [
+                    new THREE.MeshLambertMaterial({ map: textures.grass_side }), // Right
+                    new THREE.MeshLambertMaterial({ map: textures.grass_side }), // Left
+                    new THREE.MeshLambertMaterial({ map: textures.grass_top }),  // Top
+                    new THREE.MeshLambertMaterial({ map: textures.dirt }),       // Bottom
+                    new THREE.MeshLambertMaterial({ map: textures.grass_side }), // Front
+                    new THREE.MeshLambertMaterial({ map: textures.grass_side })  // Back
+                ],
+                dirt: new THREE.MeshLambertMaterial({ map: textures.dirt }),
+                stone: new THREE.MeshLambertMaterial({ map: textures.stone }),
+                gold: new THREE.MeshLambertMaterial({ map: textures.gold }),
+                start: new THREE.MeshLambertMaterial({ color: 0x00ff00 }) // Simple green for start
+            };
+
+            levelData.forEach(block => {
+                let material;
+                if (block.type === 'grass') material = materials.grass;
+                else if (block.type === 'stone') material = materials.stone;
+                else if (block.type === 'gold') material = materials.gold;
+                else if (block.type === 'start') material = materials.grass;
+                else material = materials.dirt;
+
+                const mesh = new THREE.Mesh(boxGeometry, material);
+                mesh.position.set(block.x, block.y, block.z);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                
+                // Add metadata
+                mesh.userData = { type: block.type };
+
+                scene.add(mesh);
+                currentLevelBlocks.push(mesh);
+                objects.push(mesh);
+                
+                // If it's a start block, set spawn
+                if(block.type === 'start') {
+                    startPosition.set(block.x, block.y + 2, block.z);
+                }
+            });
+            levelStartTime = performance.now();
+        }
+
+        // Camera rotation
+        let euler = new THREE.Euler(0, 0, 0, 'YXZ');
+        const PI_2 = Math.PI / 2;
+
+        function onMouseMove(event) {
+            if (!isLocked) return;
+            
+            const movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
+            const movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
+
+            euler.setFromQuaternion(camera.quaternion);
+
+            euler.y -= movementX * 0.002;
+            euler.x -= movementY * 0.002;
+
+            euler.x = Math.max(-PI_2, Math.min(PI_2, euler.x));
+
+            camera.quaternion.setFromEuler(euler);
+        }
+
+        function onKeyDown(event) {
+            switch (event.code) {
+                case 'ArrowUp':
+                case 'KeyW': moveForward = true; break;
+                case 'ArrowLeft':
+                case 'KeyA': moveLeft = true; break;
+                case 'ArrowDown':
+                case 'KeyS': moveBackward = true; break;
+                case 'ArrowRight':
+                case 'KeyD': moveRight = true; break;
+                case 'Space': 
+                    if (canJump === true) {
+                        velocity.y += PLAYER_JUMP;
+                        canJump = false;
+                    }
+                    break;
+            }
+        }
+
+        function onKeyUp(event) {
+            switch (event.code) {
+                case 'ArrowUp':
+                case 'KeyW': moveForward = false; break;
+                case 'ArrowLeft':
+                case 'KeyA': moveLeft = false; break;
+                case 'ArrowDown':
+                case 'KeyS': moveBackward = false; break;
+                case 'ArrowRight':
+                case 'KeyD': moveRight = false; break;
+            }
+        }
+
+        function respawn() {
+            velocity.set(0, 0, 0);
+            camera.position.copy(startPosition);
+            euler.x = 0;
+            euler.y = 0;
+            camera.quaternion.setFromEuler(euler);
+            
+            // Damage Flash
+            const overlay = document.getElementById('damageOverlay');
+            overlay.style.opacity = '0.5';
+            setTimeout(() => {
+                overlay.style.opacity = '0';
+            }, 200);
+        }
+
+        function checkWin(block) {
+            if (block.userData.type === 'gold') {
+                currentLevel++;
+                document.getElementById('levelDisplay').innerText = currentLevel;
+                // Simple feedback
+                const overlay = document.getElementById('damageOverlay');
+                overlay.style.backgroundColor = 'gold';
+                overlay.style.opacity = '0.5';
+                setTimeout(() => {
+                    overlay.style.opacity = '0';
+                    overlay.style.backgroundColor = 'red'; // Reset to damage color
+                }, 500);
+                
+                loadLevel(currentLevel - 1);
+                respawn();
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (isLocked) {
+                if (!hasStarted) {
+                    hasStarted = true;
+                    levelStartTime = performance.now();
+                }
+                const time = performance.now();
+                const delta = (time - prevTime) / 1000;
+
+                const t = ((time - levelStartTime) / 1000).toFixed(2);
+                document.getElementById('timer').innerText = t;
+
+                velocity.x -= velocity.x * 10.0 * delta;
+                velocity.z -= velocity.z * 10.0 * delta;
+                velocity.y -= GRAVITY * delta; // Gravity
+
+                direction.z = Number(moveForward) - Number(moveBackward);
+                direction.x = Number(moveRight) - Number(moveLeft);
+                direction.normalize(); // Ensure consistent speed in all directions
+
+                if (moveForward || moveBackward) velocity.z -= direction.z * PLAYER_SPEED * 10.0 * delta; // Removed extra multiplier
+                if (moveLeft || moveRight) velocity.x -= direction.x * PLAYER_SPEED * 10.0 * delta;
+
+                // Move camera (X and Z) - Potential position
+                const originalX = camera.position.x;
+                const originalZ = camera.position.z;
+                
+                // We move sideways/forward relative to camera rotation
+                // Calculate forward/right vectors
+                const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+                forward.y = 0; forward.normalize();
+                
+                const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+                right.y = 0; right.normalize();
+                
+                // Apply movement
+                if (moveForward) camera.position.addScaledVector(forward, PLAYER_SPEED * delta);
+                if (moveBackward) camera.position.addScaledVector(forward, -PLAYER_SPEED * delta);
+                if (moveRight) camera.position.addScaledVector(right, PLAYER_SPEED * delta);
+                if (moveLeft) camera.position.addScaledVector(right, -PLAYER_SPEED * delta);
+
+                // Simple collision detection (X/Z) - Wall collision could be here but skipping for simplicity in parkour
+                // For a true MC feel, we should prevent moving into blocks.
+                // For now, we trust the player mostly, but let's check platform landings.
+
+                // Y Movement
+                camera.position.y += velocity.y * delta;
+
+                // Ground Collision
+                // We cast a ray down from player center
+                const rayOrigin = camera.position.clone();
+                rayOrigin.y -= PLAYER_HEIGHT / 2; // From center of body roughly
+                
+                // Simple AABB check against all blocks for landing
+                // This is brute force but fast enough for < 100 blocks
+                let onObject = false;
+                
+                // Player bounding box (approximate as a point at feet for landing)
+                const feetY = camera.position.y - PLAYER_HEIGHT;
+                
+                // Check if we hit anything
+                for (let i = 0; i < objects.length; i++) {
+                    const box = new THREE.Box3().setFromObject(objects[i]);
+                    // Expand box slightly for forgiveness
+                    
+                    // Check if player is within X/Z bounds of block
+                    if (camera.position.x >= box.min.x - 0.3 && camera.position.x <= box.max.x + 0.3 &&
+                        camera.position.z >= box.min.z - 0.3 && camera.position.z <= box.max.z + 0.3) {
+                        
+                        // Check vertical intersection
+                        // If feet are close to top of box and falling
+                        if (velocity.y <= 0 && feetY <= box.max.y && feetY >= box.min.y) {
+                            camera.position.y = box.max.y + PLAYER_HEIGHT;
+                            velocity.y = 0;
+                            canJump = true;
+                            onObject = true;
+                            
+                            checkWin(objects[i]);
+                            break;
+                        }
+                    }
+                }
+
+                // Fall of map (Hit Lava)
+                if (camera.position.y < -9) {
+                    deaths++;
+                    document.getElementById('deathCount').innerText = deaths;
+                    respawn();
+                }
+
+                prevTime = time;
+            } else {
+                prevTime = performance.now();
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

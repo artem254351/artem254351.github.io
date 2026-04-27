@@ -1,0 +1,3162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebEngine Pro - Advanced Game Engine</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg-dark: #1e1e1e;
+            --bg-medium: #252526;
+            --bg-light: #2d2d30;
+            --bg-lighter: #3e3e42;
+            --text-primary: #cccccc;
+            --text-secondary: #969696;
+            --accent: #0078d4;
+            --accent-hover: #1e90ff;
+            --accent-green: #00ff9d;
+            --border: #3e3e42;
+            --success: #4ec9b0;
+            --warning: #dcdcaa;
+            --error: #f14c4c;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        #toolbar {
+            height: 40px;
+            background: var(--bg-medium);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            gap: 8px;
+            overflow-x: auto;
+        }
+        
+        .toolbar-btn {
+            padding: 5px 10px;
+            background: var(--bg-lighter);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+        
+        .toolbar-btn:hover { background: var(--accent); }
+        .toolbar-btn.play { background: #2d5a2d; }
+        .toolbar-btn.play:hover { background: #3d7a3d; }
+        .toolbar-btn.stop { background: #5a2d2d; }
+        .toolbar-btn.stop:hover { background: #7a3d3d; }
+        .toolbar-btn.terrain { background: #2d4a5a; }
+        .toolbar-btn.terrain:hover { background: #3d6a7a; }
+        .toolbar-btn.export { background: #5a4a2d; }
+        .toolbar-btn.export:hover { background: #7a6a3d; }
+        
+        .toolbar-separator {
+            width: 1px;
+            height: 24px;
+            background: var(--border);
+            margin: 0 3px;
+        }
+        
+        .toolbar-title {
+            font-weight: bold;
+            color: var(--accent);
+            margin-right: 15px;
+            font-size: 13px;
+        }
+        
+        #main-container {
+            display: flex;
+            height: calc(100vh - 40px);
+        }
+        
+        .panel {
+            background: var(--bg-medium);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .panel-header {
+            padding: 8px 12px;
+            background: var(--bg-light);
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+        
+        #hierarchy-panel {
+            width: 200px;
+            min-width: 150px;
+        }
+        
+        .hierarchy-item {
+            padding: 5px 8px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            user-select: none;
+        }
+        
+        .hierarchy-item:hover { background: var(--bg-lighter); }
+        .hierarchy-item.selected { background: var(--accent); }
+        
+        #scene-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #scene-view {
+            flex: 1;
+            position: relative;
+            background: #1a1a2e;
+        }
+        
+        #scene-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        .scene-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            z-index: 10;
+        }
+        
+        .view-mode-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+            display: flex;
+            gap: 5px;
+        }
+        
+        .view-mode-btn {
+            padding: 4px 8px;
+            background: var(--bg-lighter);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 10px;
+            border-radius: 3px;
+        }
+        
+        .view-mode-btn:hover { background: var(--accent); }
+        .view-mode-btn.active { background: var(--accent); }
+        
+        #inspector-panel {
+            width: 280px;
+            min-width: 200px;
+        }
+        
+        .component-section {
+            background: var(--bg-light);
+            border-radius: 4px;
+            margin-bottom: 6px;
+            overflow: hidden;
+        }
+        
+        .component-header {
+            padding: 6px 8px;
+            background: var(--bg-lighter);
+            font-size: 11px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .component-body { padding: 8px; }
+        
+        .property-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 11px;
+        }
+        
+        .property-label {
+            width: 80px;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+        
+        .property-input {
+            flex: 1;
+            padding: 3px 6px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 3px;
+            font-size: 10px;
+        }
+        
+        .property-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        
+        .vector-input {
+            display: flex;
+            gap: 3px;
+        }
+        
+        .vector-input input {
+            width: 50px;
+            padding: 3px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 3px;
+            font-size: 10px;
+            text-align: center;
+        }
+        
+        .vector-input .label {
+            font-size: 9px;
+            color: var(--text-secondary);
+        }
+        
+        .btn-small {
+            padding: 3px 6px;
+            background: var(--bg-lighter);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+        
+        .btn-small:hover { background: var(--accent); }
+        .btn-small.danger:hover { background: var(--error); }
+        
+        #console-panel {
+            height: 120px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .console-content {
+            font-family: 'Consolas', monospace;
+            font-size: 11px;
+        }
+        
+        .console-entry {
+            padding: 3px 6px;
+            border-bottom: 1px solid var(--bg-lighter);
+        }
+        
+        .console-entry.log { color: var(--text-primary); }
+        .console-entry.warn { color: var(--warning); }
+        .console-entry.error { color: var(--error); }
+        .console-entry.success { color: var(--success); }
+        
+        .console-time {
+            color: var(--text-secondary);
+            margin-right: 6px;
+        }
+        
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background: var(--bg-medium);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            min-width: 180px;
+            z-index: 100;
+            max-height: 350px;
+            overflow-y: auto;
+            bottom: 100%;
+            left: 0;
+            margin-bottom: 5px;
+        }
+        
+        .dropdown-content.show { display: block; }
+        
+        .dropdown-item {
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        
+        .dropdown-item:hover { background: var(--bg-lighter); }
+        
+        .dropdown-category {
+            padding: 5px 10px;
+            font-size: 9px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            background: var(--bg-dark);
+        }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: var(--bg-lighter); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--border); }
+        
+        .context-menu {
+            position: fixed;
+            background: var(--bg-medium);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            min-width: 120px;
+            z-index: 200;
+            display: none;
+        }
+        
+        .context-menu.show { display: block; }
+        
+        .context-menu-item {
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        
+        .context-menu-item:hover { background: var(--bg-lighter); }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 500;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.show { display: flex; }
+        
+        .modal-content {
+            background: var(--bg-medium);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            min-width: 400px;
+            max-width: 900px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .modal-body { margin-bottom: 12px; }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+        
+        .tabs {
+            display: flex;
+            background: var(--bg-dark);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 10px;
+        }
+        
+        .tab {
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 11px;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab:hover { background: var(--bg-light); }
+        .tab.active { border-bottom-color: var(--accent); background: var(--bg-medium); }
+        
+        .asset-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            gap: 8px;
+        }
+        
+        .asset-item {
+            padding: 8px;
+            background: var(--bg-light);
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 10px;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        
+        .asset-item:hover { 
+            background: var(--bg-lighter); 
+            transform: scale(1.05);
+            border-color: var(--accent);
+        }
+        
+        .asset-icon {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 6px;
+            background: var(--bg-dark);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .play-indicator {
+            position: absolute;
+            top: 45px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2d5a2d;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            z-index: 100;
+            display: none;
+        }
+        
+        .play-indicator.show { display: block; }
+        
+        .health-bar {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 180px;
+            height: 18px;
+            background: #333;
+            border-radius: 9px;
+            overflow: hidden;
+            z-index: 50;
+            display: none;
+        }
+        
+        .health-bar.show { display: block; }
+        
+        .health-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #e53e3e, #48bb78);
+            transition: width 0.3s;
+        }
+        
+        .health-bar-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px black;
+        }
+        
+        .instructions {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.8);
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            z-index: 50;
+            display: none;
+        }
+        
+        .instructions.show { display: block; }
+        .instructions h4 { margin-bottom: 4px; color: var(--accent); font-size: 11px; }
+        .instructions p { margin: 2px 0; color: var(--text-secondary); }
+        
+        /* Terrain Editor Styles */
+        .terrain-toolbar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .terrain-tool {
+            padding: 8px 12px;
+            background: var(--bg-lighter);
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .terrain-tool:hover { border-color: var(--accent-green); }
+        .terrain-tool.active { border-color: var(--accent-green); background: #1a3a2a; }
+        
+        .terrain-tool-icon { font-size: 20px; }
+        
+        .terrain-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        
+        .terrain-control-group {
+            background: var(--bg-light);
+            padding: 10px;
+            border-radius: 4px;
+        }
+        
+        .terrain-control-group label {
+            display: block;
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        
+        .terrain-control-group input[type="range"] {
+            width: 100%;
+        }
+        
+        .texture-palette {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .texture-swatch {
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 3px solid transparent;
+        }
+        
+        .texture-swatch:hover { border-color: var(--accent); }
+        .texture-swatch.active { border-color: var(--accent-green); }
+        
+        /* Asset Browser Styles */
+        .asset-browser-header {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .asset-search {
+            flex: 1;
+            padding: 6px 10px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 4px;
+            font-size: 11px;
+        }
+        
+        .asset-category {
+            padding: 8px;
+            background: var(--bg-light);
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .asset-category-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        
+        .prefab-models {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+        
+        .prefab-item {
+            background: var(--bg-light);
+            border-radius: 6px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        
+        .prefab-item:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+        
+        .prefab-preview {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 8px;
+            background: var(--bg-dark);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+        
+        .prefab-name {
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .prefab-desc {
+            font-size: 9px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        
+        /* Water effect */
+        .water-controls {
+            background: var(--bg-light);
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        
+        /* Drawing canvas */
+        #draw-modal-canvas {
+            border: 1px solid var(--border);
+            cursor: crosshair;
+            background: #ffffff;
+        }
+        
+        .draw-tools {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .draw-tools input[type="color"] {
+            width: 35px;
+            height: 25px;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .draw-tools input[type="range"] {
+            width: 80px;
+        }
+    </style>
+</head>
+<body>
+    <div id="toolbar">
+        <span class="toolbar-title">⚡ WebEngine Pro</span>
+        
+        <button class="toolbar-btn" onclick="Engine.newProject()">📄 New</button>
+        <button class="toolbar-btn" onclick="Engine.saveScene()">💾 Save</button>
+        <button class="toolbar-btn" onclick="Engine.loadScene()">📂 Load</button>
+        <button class="toolbar-btn export" onclick="Engine.exportToHTML()">📦 Export HTML</button>
+        
+        <div class="toolbar-separator"></div>
+        
+        <button class="toolbar-btn play" id="play-btn" onclick="Engine.play()">▶ Play</button>
+        <button class="toolbar-btn stop" onclick="Engine.stop()">⏹ Stop</button>
+        
+        <div class="toolbar-separator"></div>
+        
+        <button class="toolbar-btn" onclick="Editor.showCreateMenu()">➕ Create</button>
+        <button class="toolbar-btn" onclick="Editor.showAssetBrowser()">🎨 Assets</button>
+        <button class="toolbar-btn" onclick="Editor.showPrefabLibrary()">📁 Prefabs</button>
+        <button class="toolbar-btn terrain" onclick="TerrainEditor.show()">🏔️ Terrain</button>
+        <button class="toolbar-btn" onclick="Editor.showSpriteCreator()">🖼️ Sprite</button>
+        
+        <div style="flex:1"></div>
+        
+        <span id="fps-display" class="toolbar-title">FPS: 60</span>
+    </div>
+    
+    <div id="main-container">
+        <div id="hierarchy-panel" class="panel">
+            <div class="panel-header">
+                Hierarchy
+                <button class="btn-small" onclick="Editor.createGameObject()">+</button>
+            </div>
+            <div class="panel-content" id="hierarchy-content"></div>
+        </div>
+        
+        <div id="scene-container">
+            <div id="scene-view">
+                <canvas id="scene-canvas"></canvas>
+                
+                <div class="scene-overlay" id="scene-info">
+                    Scene: <span id="scene-name">Demo Scene</span>
+                </div>
+                
+                <div class="view-mode-toggle">
+                    <button class="view-mode-btn active" onclick="Editor.toggleGrid()" id="btn-grid">Grid</button>
+                    <button class="view-mode-btn" onclick="Editor.toggleGizmos()" id="btn-gizmos">Gizmos</button>
+                </div>
+                
+                <div class="play-indicator" id="play-indicator">▶ PLAYING</div>
+                
+                <div class="health-bar" id="health-bar">
+                    <div class="health-bar-fill" id="health-bar-fill"></div>
+                    <div class="health-bar-text" id="health-bar-text">100/100</div>
+                </div>
+                
+                <div class="instructions" id="instructions">
+                    <h4>Controls:</h4>
+                    <p>WASD - Move | Space - Jump</p>
+                    <p>Shift - Run | Q/E - Rotate</p>
+                </div>
+            </div>
+            
+            <div id="console-panel" class="panel">
+                <div class="panel-header">
+                    Console
+                    <button class="btn-small" onclick="Console.clear()">Clear</button>
+                </div>
+                <div class="panel-content console-content" id="console-content"></div>
+            </div>
+        </div>
+        
+        <div id="inspector-panel" class="panel">
+            <div class="panel-header">Inspector</div>
+            <div class="panel-content" id="inspector-content">
+                <p style="color: var(--text-secondary); font-size: 11px; text-align: center; margin-top: 20px;">
+                    Select a GameObject
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="context-menu" id="context-menu">
+        <div class="context-menu-item" onclick="Editor.duplicateSelected()">Duplicate</div>
+        <div class="context-menu-item" onclick="Editor.deleteSelected()">Delete</div>
+    </div>
+    
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-header" id="modal-header">Modal</div>
+            <div class="modal-body" id="modal-body"></div>
+            <div class="modal-footer" id="modal-footer"></div>
+        </div>
+    </div>
+
+<script>
+// ============================================================================
+// WEBENGINE PRO - Advanced Unity-Inspired Browser Game Engine
+// ============================================================================
+
+const Utils = {
+    generateId: () => Math.random().toString(36).substr(2, 9),
+    clamp: (v, min, max) => Math.max(min, Math.min(max, v)),
+    lerp: (a, b, t) => a + (b - a) * t,
+    degToRad: (d) => d * Math.PI / 180,
+    radToDeg: (r) => r * 180 / Math.PI
+};
+
+// ==================== CONSOLE ====================
+const Console = {
+    entries: [],
+    maxEntries: 50,
+    
+    log(msg) { this.addEntry('log', msg); console.log('[Engine]', msg); },
+    warn(msg) { this.addEntry('warn', msg); console.warn('[Engine]', msg); },
+    error(msg) { this.addEntry('error', msg); console.error('[Engine]', msg); },
+    success(msg) { this.addEntry('success', msg); },
+    
+    addEntry(type, msg) {
+        const time = new Date().toLocaleTimeString();
+        this.entries.push({ type, message: msg, time });
+        if (this.entries.length > this.maxEntries) this.entries.shift();
+        this.render();
+    },
+    
+    clear() { this.entries = []; this.render(); },
+    
+    render() {
+        const c = document.getElementById('console-content');
+        if (!c) return;
+        c.innerHTML = this.entries.map(e => 
+            `<div class="console-entry ${e.type}"><span class="console-time">[${e.time}]</span>${e.message}</div>`
+        ).join('');
+        c.scrollTop = c.scrollHeight;
+    }
+};
+
+// ==================== EVENT SYSTEM ====================
+class EventEmitter {
+    constructor() { this.events = {}; }
+    on(e, cb) { if (!this.events[e]) this.events[e] = []; this.events[e].push(cb); }
+    emit(e, ...args) { if (this.events[e]) this.events[e].forEach(cb => { try { cb(...args); } catch(err) {} }); }
+}
+
+// ==================== INPUT ====================
+const Input = {
+    keys: {}, keysDown: {}, keysUp: {},
+    mouse: { x: 0, y: 0, deltaX: 0, deltaY: 0 },
+    mouseButtons: {}, mouseButtonsDown: {},
+    
+    init() {
+        window.addEventListener('keydown', (e) => {
+            if (!this.keys[e.code]) this.keysDown[e.code] = true;
+            this.keys[e.code] = true;
+        });
+        window.addEventListener('keyup', (e) => {
+            this.keys[e.code] = false;
+            this.keysUp[e.code] = true;
+        });
+        window.addEventListener('mousemove', (e) => {
+            this.mouse.deltaX = e.movementX || 0;
+            this.mouse.deltaY = e.movementY || 0;
+            this.mouse.x = e.clientX;
+            this.mouse.y = e.clientY;
+        });
+        window.addEventListener('mousedown', (e) => {
+            const btn = 'Mouse' + e.button;
+            if (!this.mouseButtons[btn]) this.mouseButtonsDown[btn] = true;
+            this.mouseButtons[btn] = true;
+        });
+        window.addEventListener('mouseup', (e) => { this.mouseButtons['Mouse' + e.button] = false; });
+    },
+    
+    update() {
+        this.keysDown = {};
+        this.keysUp = {};
+        this.mouseButtonsDown = {};
+        this.mouse.deltaX = 0;
+        this.mouse.deltaY = 0;
+    },
+    
+    getKey(code) { return !!this.keys[code]; },
+    getKeyDown(code) { return !!this.keysDown[code]; }
+};
+
+// ==================== COMPONENT BASE ====================
+class Component {
+    constructor(go) {
+        this.gameObject = go;
+        this.enabled = true;
+        this._started = false;
+    }
+    
+    get transform() { return this.gameObject.transform; }
+    
+    onStart() {}
+    onUpdate(dt) {}
+    onDestroy() {}
+    
+    serialize() {
+        const data = { type: this.constructor.name };
+        for (let key of Object.keys(this)) {
+            if (key.startsWith('_') || key === 'gameObject') continue;
+            const v = this[key];
+            if (typeof v !== 'function' && typeof v !== 'object') data[key] = v;
+            else if (v && typeof v === 'object' && 'x' in v && 'y' in v) data[key] = { x: v.x, y: v.y, z: v.z || 0 };
+        }
+        return data;
+    }
+    
+    deserialize(data) {
+        for (let key of Object.keys(data)) {
+            if (key !== 'type' && key in this) this[key] = data[key];
+        }
+    }
+}
+
+// ==================== COMPONENT REGISTRY ====================
+const ComponentRegistry = {
+    components: {},
+    register(name, cls) { this.components[name] = cls; },
+    create(name, go) {
+        const Cls = this.components[name];
+        return Cls ? new Cls(go) : null;
+    },
+    getAll() { return Object.keys(this.components); }
+};
+
+// ==================== TRANSFORM ====================
+class Transform extends Component {
+    constructor(go) {
+        super(go);
+        this.position = { x: 0, y: 0, z: 0 };
+        this.rotation = { x: 0, y: 0, z: 0 };
+        this.scale = { x: 1, y: 1, z: 1 };
+    }
+    
+    rotate(x, y, z) {
+        this.rotation.x += Utils.degToRad(x);
+        this.rotation.y += Utils.degToRad(y);
+        this.rotation.z += Utils.degToRad(z);
+    }
+    
+    serialize() {
+        return {
+            type: 'Transform',
+            position: { ...this.position },
+            rotation: { ...this.rotation },
+            scale: { ...this.scale }
+        };
+    }
+    
+    deserialize(data) {
+        if (data.position) Object.assign(this.position, data.position);
+        if (data.rotation) Object.assign(this.rotation, data.rotation);
+        if (data.scale) Object.assign(this.scale, data.scale);
+    }
+}
+ComponentRegistry.register('Transform', Transform);
+
+// ==================== MESH RENDERER ====================
+class MeshRenderer extends Component {
+    constructor(go) {
+        super(go);
+        this.mesh = null;
+        this.geometry = 'box';
+        this.color = '#4299e1';
+        this.castShadow = true;
+        this.receiveShadow = true;
+    }
+    
+    createMesh() {
+        if (!Engine.renderer3D || !Engine.renderer3D.scene) return;
+        
+        if (this.mesh) {
+            Engine.renderer3D.scene.remove(this.mesh);
+            if (this.mesh.geometry) this.mesh.geometry.dispose();
+            if (this.mesh.material) this.mesh.material.dispose();
+        }
+        
+        let geom;
+        switch (this.geometry) {
+            case 'box': geom = new THREE.BoxGeometry(1, 1, 1); break;
+            case 'sphere': geom = new THREE.SphereGeometry(0.5, 32, 32); break;
+            case 'cylinder': geom = new THREE.CylinderGeometry(0.5, 0.5, 1, 32); break;
+            case 'plane': geom = new THREE.PlaneGeometry(10, 10); break;
+            case 'cone': geom = new THREE.ConeGeometry(0.5, 1, 32); break;
+            case 'torus': geom = new THREE.TorusGeometry(0.5, 0.2, 16, 32); break;
+            case 'capsule': geom = new THREE.CapsuleGeometry(0.3, 0.6, 8, 16); break;
+            default: geom = new THREE.BoxGeometry(1, 1, 1);
+        }
+        
+        const mat = new THREE.MeshStandardMaterial({ color: this.color, roughness: 0.5, metalness: 0.3 });
+        this.mesh = new THREE.Mesh(geom, mat);
+        this.mesh.castShadow = this.castShadow;
+        this.mesh.receiveShadow = this.receiveShadow;
+        this.mesh.userData.gameObjectId = this.gameObject.id;
+        
+        Engine.renderer3D.scene.add(this.mesh);
+        this.updateMeshTransform();
+    }
+    
+    updateMeshTransform() {
+        if (this.mesh) {
+            this.mesh.position.set(this.transform.position.x, this.transform.position.y, this.transform.position.z);
+            this.mesh.rotation.set(this.transform.rotation.x, this.transform.rotation.y, this.transform.rotation.z);
+            this.mesh.scale.set(this.transform.scale.x, this.transform.scale.y, this.transform.scale.z);
+        }
+    }
+    
+    onStart() { if (!this.mesh) this.createMesh(); }
+    onUpdate(dt) { this.updateMeshTransform(); }
+    
+    onDestroy() {
+        if (this.mesh) {
+            Engine.renderer3D.scene.remove(this.mesh);
+            if (this.mesh.geometry) this.mesh.geometry.dispose();
+            if (this.mesh.material) this.mesh.material.dispose();
+            this.mesh = null;
+        }
+    }
+    
+    serialize() {
+        return { type: 'MeshRenderer', geometry: this.geometry, color: this.color, castShadow: this.castShadow, receiveShadow: this.receiveShadow };
+    }
+    
+    deserialize(data) {
+        this.geometry = data.geometry || 'box';
+        this.color = data.color || '#4299e1';
+        this.castShadow = data.castShadow !== false;
+        this.receiveShadow = data.receiveShadow !== false;
+    }
+}
+ComponentRegistry.register('MeshRenderer', MeshRenderer);
+
+// ==================== LIGHT ====================
+class Light extends Component {
+    constructor(go) {
+        super(go);
+        this.lightType = 'point';
+        this.color = '#ffffff';
+        this.intensity = 1;
+        this.range = 10;
+        this._light = null;
+    }
+    
+    createLight() {
+        if (!Engine.renderer3D || !Engine.renderer3D.scene) return;
+        if (this._light) Engine.renderer3D.scene.remove(this._light);
+        
+        switch (this.lightType) {
+            case 'directional':
+                this._light = new THREE.DirectionalLight(this.color, this.intensity);
+                this._light.castShadow = true;
+                break;
+            case 'point':
+                this._light = new THREE.PointLight(this.color, this.intensity, this.range);
+                this._light.castShadow = true;
+                break;
+            case 'spot':
+                this._light = new THREE.SpotLight(this.color, this.intensity, this.range);
+                this._light.castShadow = true;
+                break;
+        }
+        
+        if (this._light) {
+            Engine.renderer3D.scene.add(this._light);
+            this.updateLightTransform();
+        }
+    }
+    
+    updateLightTransform() {
+        if (this._light) {
+            this._light.position.set(this.transform.position.x, this.transform.position.y, this.transform.position.z);
+        }
+    }
+    
+    onStart() { if (!this._light) this.createLight(); }
+    onUpdate(dt) { this.updateLightTransform(); }
+    onDestroy() { if (this._light) Engine.renderer3D.scene.remove(this._light); }
+    
+    serialize() { return { type: 'Light', lightType: this.lightType, color: this.color, intensity: this.intensity, range: this.range }; }
+    deserialize(data) { Object.assign(this, data); }
+}
+ComponentRegistry.register('Light', Light);
+
+// ==================== RIGIDBODY ====================
+class Rigidbody extends Component {
+    constructor(go) {
+        super(go);
+        this.mass = 1;
+        this.friction = 0.3;
+        this.restitution = 0.3;
+        this.isKinematic = false;
+        this._body = null;
+    }
+    
+    createBody() {
+        if (!Engine.physics || !Engine.physics.world) return;
+        
+        const collider = this.gameObject.getComponent('Collider3D');
+        let shape = collider ? collider.getShape() : new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5));
+        
+        this._body = new CANNON.Body({
+            mass: this.isKinematic ? 0 : this.mass,
+            shape: shape,
+            position: new CANNON.Vec3(this.transform.position.x, this.transform.position.y, this.transform.position.z),
+            material: new CANNON.Material({ friction: this.friction, restitution: this.restitution })
+        });
+        
+        this._body.linearDamping = 0.1;
+        this._body.angularDamping = 0.3;
+        Engine.physics.world.addBody(this._body);
+    }
+    
+    onStart() { this.createBody(); }
+    
+    onUpdate(dt) {
+        if (this._body && !this.isKinematic) {
+            this.transform.position.x = this._body.position.x;
+            this.transform.position.y = this._body.position.y;
+            this.transform.position.z = this._body.position.z;
+            
+            const euler = new THREE.Euler();
+            euler.setFromQuaternion(new THREE.Quaternion(
+                this._body.quaternion.x, this._body.quaternion.y,
+                this._body.quaternion.z, this._body.quaternion.w
+            ));
+            this.transform.rotation.x = euler.x;
+            this.transform.rotation.y = euler.y;
+            this.transform.rotation.z = euler.z;
+        }
+    }
+    
+    getVelocity() {
+        return this._body ? { x: this._body.velocity.x, y: this._body.velocity.y, z: this._body.velocity.z } : { x: 0, y: 0, z: 0 };
+    }
+    
+    onDestroy() {
+        if (this._body && Engine.physics && Engine.physics.world) {
+            Engine.physics.world.removeBody(this._body);
+        }
+    }
+    
+    serialize() { return { type: 'Rigidbody', mass: this.mass, friction: this.friction, restitution: this.restitution, isKinematic: this.isKinematic }; }
+    deserialize(data) { Object.assign(this, data); }
+}
+ComponentRegistry.register('Rigidbody', Rigidbody);
+
+// ==================== COLLIDER 3D ====================
+class Collider3D extends Component {
+    constructor(go) {
+        super(go);
+        this.shapeType = 'box';
+        this.size = { x: 1, y: 1, z: 1 };
+        this.radius = 0.5;
+    }
+    
+    getShape() {
+        switch (this.shapeType) {
+            case 'box': return new CANNON.Box(new CANNON.Vec3(this.size.x / 2, this.size.y / 2, this.size.z / 2));
+            case 'sphere': return new CANNON.Sphere(this.radius);
+            case 'cylinder': return new CANNON.Cylinder(this.radius, this.radius, this.size.y, 16);
+            default: return new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5));
+        }
+    }
+    
+    serialize() { return { type: 'Collider3D', shapeType: this.shapeType, size: { ...this.size }, radius: this.radius }; }
+    deserialize(data) { Object.assign(this, data); }
+}
+ComponentRegistry.register('Collider3D', Collider3D);
+
+// ==================== TRANSFORM CONTROLLER (Player Movement) ====================
+class TransformController extends Component {
+    constructor(go) {
+        super(go);
+        this.speed = 5;
+        this.rotationSpeed = 90;
+        this.runMultiplier = 2;
+        this.jumpForce = 8;
+        this.isGrounded = true;
+        this._verticalVelocity = 0;
+    }
+    
+    onUpdate(dt) {
+        if (!Engine.isPlaying) return;
+        
+        const rb = this.gameObject.getComponent('Rigidbody');
+        let moveSpeed = this.speed;
+        
+        if (Input.getKey('ShiftLeft') || Input.getKey('ShiftRight')) moveSpeed *= this.runMultiplier;
+        
+        let moveX = 0, moveZ = 0;
+        if (Input.getKey('KeyW') || Input.getKey('ArrowUp')) moveZ = -1;
+        if (Input.getKey('KeyS') || Input.getKey('ArrowDown')) moveZ = 1;
+        if (Input.getKey('KeyA') || Input.getKey('ArrowLeft')) moveX = -1;
+        if (Input.getKey('KeyD') || Input.getKey('ArrowRight')) moveX = 1;
+        
+        if (moveX !== 0 && moveZ !== 0) { moveX *= 0.707; moveZ *= 0.707; }
+        
+        if (rb && rb._body) {
+            rb._body.velocity.x = moveX * moveSpeed;
+            rb._body.velocity.z = moveZ * moveSpeed;
+            
+            this.isGrounded = this.transform.position.y <= 1.1;
+            
+            if (Input.getKeyDown('Space') && this.isGrounded) {
+                rb._body.velocity.y = this.jumpForce;
+                this.isGrounded = false;
+            }
+        } else {
+            this.transform.position.x += moveX * moveSpeed * dt;
+            this.transform.position.z += moveZ * moveSpeed * dt;
+            
+            if (this.transform.position.y > 0.5) {
+                this._verticalVelocity -= 20 * dt;
+            } else {
+                this._verticalVelocity = 0;
+                this.transform.position.y = 0.5;
+                this.isGrounded = true;
+            }
+            
+            if (Input.getKeyDown('Space') && this.isGrounded) {
+                this._verticalVelocity = this.jumpForce;
+                this.isGrounded = false;
+            }
+            
+            this.transform.position.y += this._verticalVelocity * dt;
+        }
+        
+        if (Input.getKey('KeyQ')) this.transform.rotation.y += Utils.degToRad(this.rotationSpeed * dt);
+        if (Input.getKey('KeyE')) this.transform.rotation.y -= Utils.degToRad(this.rotationSpeed * dt);
+    }
+    
+    serialize() { return { type: 'TransformController', speed: this.speed, rotationSpeed: this.rotationSpeed, runMultiplier: this.runMultiplier, jumpForce: this.jumpForce }; }
+    deserialize(data) { Object.assign(this, data); }
+}
+ComponentRegistry.register('TransformController', TransformController);
+
+// ==================== CAMERA FOLLOW ====================
+class CameraFollow extends Component {
+    constructor(go) {
+        super(go);
+        this.targetName = 'Player';
+        this.offset = { x: 0, y: 5, z: 10 };
+        this.smoothing = 0.1;
+    }
+    
+    onUpdate(dt) {
+        if (!Engine.isPlaying) return;
+        
+        const target = Engine.activeScene.findByName(this.targetName);
+        if (!target) return;
+        
+        const targetPos = {
+            x: target.transform.position.x + this.offset.x,
+            y: target.transform.position.y + this.offset.y,
+            z: target.transform.position.z + this.offset.z
+        };
+        
+        this.transform.position.x = Utils.lerp(this.transform.position.x, targetPos.x, this.smoothing);
+        this.transform.position.y = Utils.lerp(this.transform.position.y, targetPos.y, this.smoothing);
+        this.transform.position.z = Utils.lerp(this.transform.position.z, targetPos.z, this.smoothing);
+        
+        if (Engine.renderer3D && Engine.renderer3D.camera) {
+            Engine.renderer3D.camera.position.set(this.transform.position.x, this.transform.position.y, this.transform.position.z);
+            Engine.renderer3D.camera.lookAt(target.transform.position.x, target.transform.position.y + 1, target.transform.position.z);
+        }
+    }
+    
+    serialize() { return { type: 'CameraFollow', targetName: this.targetName, offset: { ...this.offset }, smoothing: this.smoothing }; }
+    deserialize(data) { Object.assign(this, data); if (data.offset) this.offset = { ...data.offset }; }
+}
+ComponentRegistry.register('CameraFollow', CameraFollow);
+
+// ==================== HEALTH SYSTEM ====================
+class HealthSystem extends Component {
+    constructor(go) {
+        super(go);
+        this.maxHealth = 100;
+        this.currentHealth = 100;
+        this.invincible = false;
+    }
+    
+    onStart() { this.currentHealth = this.maxHealth; }
+    
+    onUpdate(dt) {
+        if (!Engine.isPlaying || this.gameObject.name !== 'Player') return;
+        
+        const bar = document.getElementById('health-bar');
+        const fill = document.getElementById('health-bar-fill');
+        const text = document.getElementById('health-bar-text');
+        
+        if (bar) {
+            bar.classList.add('show');
+            fill.style.width = (this.currentHealth / this.maxHealth * 100) + '%';
+            text.textContent = `${Math.round(this.currentHealth)}/${this.maxHealth}`;
+        }
+    }
+    
+    takeDamage(amount) {
+        if (this.invincible) return;
+        this.currentHealth = Math.max(0, this.currentHealth - amount);
+        if (this.currentHealth <= 0) this.gameObject.emit('death');
+    }
+    
+    heal(amount) { this.currentHealth = Math.min(this.maxHealth, this.currentHealth + amount); }
+    
+    serialize() { return { type: 'HealthSystem', maxHealth: this.maxHealth, currentHealth: this.currentHealth, invincible: this.invincible }; }
+    deserialize(data) { Object.assign(this, data); }
+}
+ComponentRegistry.register('HealthSystem', HealthSystem);
+
+// ==================== ROTATOR ====================
+class Rotator extends Component {
+    constructor(go) {
+        super(go);
+        this.speedX = 0;
+        this.speedY = 50;
+        this.speedZ = 0;
+    }
+    
+    onUpdate(dt) {
+        if (!Engine.isPlaying) return;
+        this.transform.rotate(this.speedX * dt, this.speedY * dt, this.speedZ * dt);
+    }
+    
+    serialize() { return { type: 'Rotator', speedX: this.speedX, speedY: this.speedY, speedZ: this.speedZ }; }
+    deserialize(data) { Object.assign(this, data); }
+}
+ComponentRegistry.register('Rotator', Rotator);
+
+// ==================== BOUNCER ====================
+class Bouncer extends Component {
+    constructor(go) {
+        super(go);
+        this.amplitude = 0.5;
+        this.frequency = 1;
+        this._startY = 0;
+        this._time = 0;
+    }
+    
+    onStart() { this._startY = this.transform.position.y; }
+    
+    onUpdate(dt) {
+        if (!Engine.isPlaying) return;
+        this._time += dt;
+        this.transform.position.y = this._startY + Math.sin(this._time * this.frequency * Math.PI * 2) * this.amplitude;
+    }
+    
+    serialize() { return { type: 'Bouncer', amplitude: this.amplitude, frequency: this.frequency }; }
+    deserialize(data) { Object.assign(this, data); }
+}
+ComponentRegistry.register('Bouncer', Bouncer);
+
+// ==================== PATH FOLLOWER ====================
+class PathFollower extends Component {
+    constructor(go) {
+        super(go);
+        this.speed = 2;
+        this.loopPath = true;
+        this._waypointsStr = '0,0.5,0; 5,0.5,0; 5,0.5,5; 0,0.5,5';
+        this.waypoints = [];
+        this._currentWaypoint = 0;
+    }
+    
+    onStart() { this.parseWaypoints(); }
+    
+    parseWaypoints() {
+        try {
+            this.waypoints = this._waypointsStr.split(';').map(w => {
+                const parts = w.trim().split(',').map(Number);
+                return { x: parts[0] || 0, y: parts[1] || 0, z: parts[2] || 0 };
+            });
+        } catch (e) { this.waypoints = []; }
+    }
+    
+    onUpdate(dt) {
+        if (!Engine.isPlaying || this.waypoints.length === 0) return;
+        
+        const target = this.waypoints[this._currentWaypoint];
+        if (!target) return;
+        
+        const dx = target.x - this.transform.position.x;
+        const dy = target.y - this.transform.position.y;
+        const dz = target.z - this.transform.position.z;
+        const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+        
+        if (dist < 0.1) {
+            this._currentWaypoint++;
+            if (this._currentWaypoint >= this.waypoints.length) {
+                this._currentWaypoint = this.loopPath ? 0 : this.waypoints.length - 1;
+            }
+            return;
+        }
+        
+        this.transform.position.x += (dx / dist) * this.speed * dt;
+        this.transform.position.y += (dy / dist) * this.speed * dt;
+        this.transform.position.z += (dz / dist) * this.speed * dt;
+    }
+    
+    serialize() { return { type: 'PathFollower', _waypointsStr: this._waypointsStr, speed: this.speed, loopPath: this.loopPath }; }
+    deserialize(data) { Object.assign(this, data); this.parseWaypoints(); }
+}
+ComponentRegistry.register('PathFollower', PathFollower);
+
+// ==================== LIGHT FLICKER ====================
+class LightFlicker extends Component {
+    constructor(go) {
+        super(go);
+        this.minIntensity = 0.5;
+        this.maxIntensity = 1.5;
+        this.frequency = 2;
+        this._time = 0;
+    }
+    
+    onUpdate(dt) {
+        if (!Engine.isPlaying) return;
+        this._time += dt;
+        const light = this.gameObject.getComponent('Light');
+        if (!light || !light._light) return;
+        
+        const intensity = (Math.sin(this._time * this.frequency * Math.PI * 2) + 1) / 2;
+        light._light.intensity = Utils.lerp(this.minIntensity, this.maxIntensity, intensity);
+    }
+    
+    serialize() { return { type: 'LightFlicker', minIntensity: this.minIntensity, maxIntensity: this.maxIntensity, frequency: this.frequency }; }
+    deserialize(data) { Object.assign(this, data); }
+}
+ComponentRegistry.register('LightFlicker', LightFlicker);
+
+// ==================== PARTICLE EMITTER ====================
+class ParticleEmitter extends Component {
+    constructor(go) {
+        super(go);
+        this.particleCount = 50;
+        this.lifetime = 2;
+        this.color = '#ffaa00';
+        this.speed = 3;
+        this.continuous = false;
+        this._particles = [];
+        this._points = null;
+    }
+    
+    initParticles() {
+        if (!Engine.renderer3D || !Engine.renderer3D.scene) return;
+        
+        const geom = new THREE.BufferGeometry();
+        const mat = new THREE.PointsMaterial({ color: this.color, size: 0.2, transparent: true, opacity: 0.8 });
+        const positions = new Float32Array(this.particleCount * 3);
+        geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        
+        this._points = new THREE.Points(geom, mat);
+        Engine.renderer3D.scene.add(this._points);
+    }
+    
+    onStart() { this.initParticles(); }
+    
+    onUpdate(dt) {
+        if (!this._points) return;
+        
+        if (this.continuous && Engine.isPlaying && this._particles.length < this.particleCount) {
+            this._particles.push({
+                position: { ...this.transform.position },
+                velocity: { x: (Math.random() - 0.5) * this.speed, y: Math.random() * this.speed, z: (Math.random() - 0.5) * this.speed },
+                age: 0, lifetime: this.lifetime * (0.5 + Math.random() * 0.5)
+            });
+        }
+        
+        const positions = this._points.geometry.attributes.position.array;
+        let count = 0;
+        
+        for (let i = this._particles.length - 1; i >= 0; i--) {
+            const p = this._particles[i];
+            p.age += dt;
+            if (p.age >= p.lifetime) { this._particles.splice(i, 1); continue; }
+            
+            p.velocity.y -= 5 * dt;
+            p.position.x += p.velocity.x * dt;
+            p.position.y += p.velocity.y * dt;
+            p.position.z += p.velocity.z * dt;
+            
+            positions[count * 3] = p.position.x;
+            positions[count * 3 + 1] = p.position.y;
+            positions[count * 3 + 2] = p.position.z;
+            count++;
+        }
+        
+        for (let i = count; i < this.particleCount; i++) positions[i * 3 + 1] = -1000;
+        
+        this._points.geometry.attributes.position.needsUpdate = true;
+    }
+    
+    onDestroy() {
+        if (this._points) {
+            Engine.renderer3D.scene.remove(this._points);
+            this._points.geometry.dispose();
+            this._points.material.dispose();
+        }
+    }
+    
+    serialize() { return { type: 'ParticleEmitter', particleCount: this.particleCount, lifetime: this.lifetime, color: this.color, speed: this.speed, continuous: this.continuous }; }
+    deserialize(data) { Object.assign(this, data); }
+}
+ComponentRegistry.register('ParticleEmitter', ParticleEmitter);
+
+// ==================== GAMEOBJECT ====================
+class GameObject extends EventEmitter {
+    constructor(name = 'GameObject') {
+        super();
+        this.id = Utils.generateId();
+        this.name = name;
+        this.tag = 'Untagged';
+        this.active = true;
+        this.children = [];
+        this.components = new Map();
+        
+        this.transform = new Transform(this);
+        this.components.set('Transform', this.transform);
+    }
+    
+    addComponent(name) {
+        if (this.components.has(name)) return this.components.get(name);
+        
+        const comp = ComponentRegistry.create(name, this);
+        if (comp) {
+            this.components.set(name, comp);
+            if (comp.createMesh) comp.createMesh();
+            if (comp.createLight) comp.createLight();
+            if (comp.initParticles) comp.initParticles();
+            return comp;
+        }
+        return null;
+    }
+    
+    getComponent(name) { return this.components.get(name) || null; }
+    
+    removeComponent(name) {
+        if (name === 'Transform') return false;
+        const comp = this.components.get(name);
+        if (comp) { comp.onDestroy(); this.components.delete(name); return true; }
+        return false;
+    }
+    
+    start() {
+        this.components.forEach(c => {
+            if (c.enabled && !c._started) { try { c.onStart(); c._started = true; } catch (e) {} }
+        });
+        this.children.forEach(child => child.start());
+    }
+    
+    update(dt) {
+        if (!this.active) return;
+        this.components.forEach(c => { if (c.enabled) try { c.onUpdate(dt); } catch (e) {} });
+        this.children.forEach(child => child.update(dt));
+    }
+    
+    destroy() {
+        this.components.forEach(c => { try { c.onDestroy(); } catch (e) {} });
+        this.children.forEach(child => child.destroy());
+        Engine.activeScene.removeGameObject(this);
+    }
+    
+    serialize() {
+        return {
+            id: this.id, name: this.name, tag: this.tag, active: this.active,
+            components: Array.from(this.components.values()).map(c => c.serialize()),
+            children: this.children.map(c => c.serialize())
+        };
+    }
+    
+    static deserialize(data) {
+        const go = new GameObject(data.name);
+        go.id = data.id;
+        go.tag = data.tag || 'Untagged';
+        go.active = data.active !== false;
+        
+        data.components.forEach(cd => {
+            if (cd.type === 'Transform') go.transform.deserialize(cd);
+            else { const c = go.addComponent(cd.type); if (c) c.deserialize(cd); }
+        });
+        
+        if (data.children) data.children.forEach(ch => { const child = GameObject.deserialize(ch); go.children.push(child); });
+        
+        return go;
+    }
+}
+
+// ==================== SCENE ====================
+class Scene {
+    constructor(name = 'Untitled') {
+        this.name = name;
+        this.gameObjects = [];
+        this.terrain = null;
+    }
+    
+    createGameObject(name = 'GameObject') {
+        const go = new GameObject(name);
+        this.gameObjects.push(go);
+        return go;
+    }
+    
+    removeGameObject(go) {
+        const idx = this.gameObjects.indexOf(go);
+        if (idx !== -1) this.gameObjects.splice(idx, 1);
+    }
+    
+    findByName(name) {
+        for (const go of this.gameObjects) {
+            if (go.name === name) return go;
+            for (const child of go.children) if (child.name === name) return child;
+        }
+        return null;
+    }
+    
+    findById(id) {
+        for (const go of this.gameObjects) {
+            if (go.id === id) return go;
+            for (const child of go.children) if (child.id === id) return child;
+        }
+        return null;
+    }
+    
+    start() { this.gameObjects.forEach(go => go.start()); }
+    update(dt) { this.gameObjects.forEach(go => go.update(dt)); }
+    
+    serialize() {
+        return {
+            name: this.name,
+            gameObjects: this.gameObjects.map(go => go.serialize()),
+            terrain: this.terrain
+        };
+    }
+    
+    static deserialize(data) {
+        const scene = new Scene(data.name);
+        data.gameObjects.forEach(goData => scene.gameObjects.push(GameObject.deserialize(goData)));
+        scene.terrain = data.terrain || null;
+        return scene;
+    }
+}
+
+// ==================== PHYSICS ====================
+const PhysicsSystem = {
+    world: null,
+    
+    init() {
+        this.world = new CANNON.World();
+        this.world.gravity.set(0, -20, 0);
+        this.world.broadphase = new CANNON.NaiveBroadphase();
+        
+        const groundBody = new CANNON.Body({ mass: 0 });
+        groundBody.addShape(new CANNON.Plane());
+        groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+        this.world.addBody(groundBody);
+    },
+    
+    update(dt) { if (this.world) this.world.step(1 / 60, dt, 3); },
+    
+    reset() {
+        if (this.world) {
+            while (this.world.bodies.length > 1) this.world.removeBody(this.world.bodies[this.world.bodies.length - 1]);
+        }
+    }
+};
+
+// ==================== 3D RENDERER ====================
+const Renderer3D = {
+    scene: null,
+    camera: null,
+    renderer: null,
+    grid: null,
+    orbitRadius: 15,
+    orbitAngleX: 0.5,
+    orbitAngleY: 0.5,
+    orbitCenter: { x: 0, y: 2, z: 0 },
+    isDragging: false,
+    lastMouse: { x: 0, y: 0 },
+    
+    init(canvas) {
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0x2a2a3e);
+        
+        this.camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+        this.updateCamera();
+        
+        this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        this.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        
+        // Lights
+        this.scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        this.scene.add(new THREE.HemisphereLight(0x87ceeb, 0x362312, 0.5));
+        
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 100;
+        dirLight.shadow.camera.left = -30;
+        dirLight.shadow.camera.right = 30;
+        dirLight.shadow.camera.top = 30;
+        dirLight.shadow.camera.bottom = -30;
+        this.scene.add(dirLight);
+        
+        this.grid = new THREE.GridHelper(50, 50, 0x555555, 0x333333);
+        this.scene.add(this.grid);
+        
+        // Mouse controls
+        canvas.addEventListener('mousedown', (e) => {
+            if (e.button === 0 || e.button === 2) {
+                this.isDragging = true;
+                this.lastMouse = { x: e.clientX, y: e.clientY };
+            }
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (this.isDragging && !Engine.isPlaying) {
+                const dx = e.clientX - this.lastMouse.x;
+                const dy = e.clientY - this.lastMouse.y;
+                this.orbitAngleY += dx * 0.01;
+                this.orbitAngleX = Utils.clamp(this.orbitAngleX + dy * 0.01, 0.1, Math.PI - 0.1);
+                this.updateCamera();
+                this.lastMouse = { x: e.clientX, y: e.clientY };
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => { this.isDragging = false; });
+        canvas.addEventListener('mouseleave', () => { this.isDragging = false; });
+        canvas.addEventListener('wheel', (e) => {
+            if (!Engine.isPlaying) {
+                this.orbitRadius = Utils.clamp(this.orbitRadius + e.deltaY * 0.02, 3, 100);
+                this.updateCamera();
+            }
+        });
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    },
+    
+    updateCamera() {
+        if (!this.camera) return;
+        this.camera.position.x = this.orbitCenter.x + this.orbitRadius * Math.sin(this.orbitAngleX) * Math.sin(this.orbitAngleY);
+        this.camera.position.y = this.orbitCenter.y + this.orbitRadius * Math.cos(this.orbitAngleX);
+        this.camera.position.z = this.orbitCenter.z + this.orbitRadius * Math.sin(this.orbitAngleX) * Math.cos(this.orbitAngleY);
+        this.camera.lookAt(this.orbitCenter.x, this.orbitCenter.y, this.orbitCenter.z);
+    },
+    
+    render() { this.renderer.render(this.scene, this.camera); },
+    
+    resize(w, h) {
+        this.camera.aspect = w / h;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(w, h);
+    },
+    
+    clear() {
+        const toRemove = [];
+        this.scene.traverse(obj => { if (obj.userData && obj.userData.gameObjectId) toRemove.push(obj); });
+        toRemove.forEach(obj => {
+            this.scene.remove(obj);
+            if (obj.geometry) obj.geometry.dispose();
+            if (obj.material) obj.material.dispose();
+        });
+    },
+    
+    raycastFromMouse(mx, my, canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const x = ((mx - rect.left) / rect.width) * 2 - 1;
+        const y = -((my - rect.top) / rect.height) * 2 + 1;
+        
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(new THREE.Vector2(x, y), this.camera);
+        
+        const objects = [];
+        this.scene.traverse(obj => { if (obj.isMesh && obj.userData.gameObjectId) objects.push(obj); });
+        
+        const intersects = raycaster.intersectObjects(objects);
+        return intersects.length > 0 ? Engine.activeScene.findById(intersects[0].object.userData.gameObjectId) : null;
+    }
+};
+
+// ==================== TERRAIN EDITOR ====================
+const TerrainEditor = {
+    terrain: null,
+    terrainMesh: null,
+    waterMesh: null,
+    size: 64,
+    heights: null,
+    textures: null,
+    activeTool: 'raise',
+    brushSize: 5,
+    brushStrength: 0.3,
+    activeTexture: 0,
+    waterLevel: 0.3,
+    waterEnabled: false,
+    
+    init() {
+        this.heights = new Float32Array(this.size * this.size);
+        this.textures = new Uint8Array(this.size * this.size);
+    },
+    
+    show() {
+        const modal = document.getElementById('modal');
+        document.getElementById('modal-header').textContent = '🏔️ Terrain Editor';
+        document.getElementById('modal-body').innerHTML = `
+            <div class="terrain-toolbar">
+                <div class="terrain-tool active" data-tool="raise" onclick="TerrainEditor.setTool('raise')">
+                    <span class="terrain-tool-icon">⬆️</span>
+                    <span>Raise</span>
+                </div>
+                <div class="terrain-tool" data-tool="lower" onclick="TerrainEditor.setTool('lower')">
+                    <span class="terrain-tool-icon">⬇️</span>
+                    <span>Lower</span>
+                </div>
+                <div class="terrain-tool" data-tool="smooth" onclick="TerrainEditor.setTool('smooth')">
+                    <span class="terrain-tool-icon">〰️</span>
+                    <span>Smooth</span>
+                </div>
+                <div class="terrain-tool" data-tool="flatten" onclick="TerrainEditor.setTool('flatten')">
+                    <span class="terrain-tool-icon">➖</span>
+                    <span>Flatten</span>
+                </div>
+                <div class="terrain-tool" data-tool="paint" onclick="TerrainEditor.setTool('paint')">
+                    <span class="terrain-tool-icon">🎨</span>
+                    <span>Paint</span>
+                </div>
+            </div>
+            
+            <div class="terrain-controls">
+                <div class="terrain-control-group">
+                    <label>Brush Size: <span id="brush-size-val">${this.brushSize}</span></label>
+                    <input type="range" min="1" max="20" value="${this.brushSize}" oninput="TerrainEditor.setBrushSize(this.value)">
+                </div>
+                <div class="terrain-control-group">
+                    <label>Brush Strength: <span id="brush-strength-val">${this.brushStrength.toFixed(2)}</span></label>
+                    <input type="range" min="0.05" max="1" step="0.05" value="${this.brushStrength}" oninput="TerrainEditor.setBrushStrength(this.value)">
+                </div>
+            </div>
+            
+            <div class="texture-palette">
+                <div class="texture-swatch active" style="background: #4a7c59;" onclick="TerrainEditor.setTexture(0)" title="Grass"></div>
+                <div class="texture-swatch" style="background: #c2b280;" onclick="TerrainEditor.setTexture(1)" title="Sand"></div>
+                <div class="texture-swatch" style="background: #7a7a7a;" onclick="TerrainEditor.setTexture(2)" title="Rock"></div>
+                <div class="texture-swatch" style="background: #3d2817;" onclick="TerrainEditor.setTexture(3)" title="Dirt"></div>
+                <div class="texture-swatch" style="background: #e8e8e8;" onclick="TerrainEditor.setTexture(4)" title="Snow"></div>
+            </div>
+            
+            <div class="water-controls">
+                <label style="font-size: 11px; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" ${this.waterEnabled ? 'checked' : ''} onchange="TerrainEditor.toggleWater(this.checked)">
+                    Enable Water
+                </label>
+                <div style="margin-top: 8px;">
+                    <label style="font-size: 11px;">Water Level: <span id="water-level-val">${this.waterLevel.toFixed(2)}</span></label>
+                    <input type="range" min="0" max="1" step="0.05" value="${this.waterLevel}" oninput="TerrainEditor.setWaterLevel(this.value)" style="width: 100%;">
+                </div>
+            </div>
+        `;
+        document.getElementById('modal-footer').innerHTML = `
+            <button class="btn-small" onclick="TerrainEditor.generate()">Generate Terrain</button>
+            <button class="btn-small" onclick="TerrainEditor.randomize()">Randomize</button>
+            <button class="btn-small" onclick="Editor.hideModal()">Close</button>
+        `;
+        modal.classList.add('show');
+    },
+    
+    setTool(tool) {
+        this.activeTool = tool;
+        document.querySelectorAll('.terrain-tool').forEach(t => t.classList.remove('active'));
+        document.querySelector(`[data-tool="${tool}"]`).classList.add('active');
+    },
+    
+    setBrushSize(val) {
+        this.brushSize = parseInt(val);
+        document.getElementById('brush-size-val').textContent = this.brushSize;
+    },
+    
+    setBrushStrength(val) {
+        this.brushStrength = parseFloat(val);
+        document.getElementById('brush-strength-val').textContent = this.brushStrength.toFixed(2);
+    },
+    
+    setTexture(idx) {
+        this.activeTexture = idx;
+        document.querySelectorAll('.texture-swatch').forEach((s, i) => s.classList.toggle('active', i === idx));
+    },
+    
+    toggleWater(enabled) {
+        this.waterEnabled = enabled;
+        if (enabled) this.createWater();
+        else if (this.waterMesh) { Engine.renderer3D.scene.remove(this.waterMesh); this.waterMesh = null; }
+    },
+    
+    setWaterLevel(val) {
+        this.waterLevel = parseFloat(val);
+        document.getElementById('water-level-val').textContent = this.waterLevel.toFixed(2);
+        if (this.waterMesh) this.waterMesh.position.y = this.waterLevel * 5;
+    },
+    
+    generate() {
+        if (this.terrainMesh) {
+            Engine.renderer3D.scene.remove(this.terrainMesh);
+            this.terrainMesh.geometry.dispose();
+            this.terrainMesh.material.dispose();
+        }
+        
+        const geom = new THREE.PlaneGeometry(30, 30, this.size - 1, this.size - 1);
+        geom.rotateX(-Math.PI / 2);
+        
+        const positions = geom.attributes.position.array;
+        for (let i = 0; i < this.size * this.size; i++) {
+            positions[i * 3 + 1] = this.heights[i] * 5;
+        }
+        geom.computeVertexNormals();
+        
+        const mat = new THREE.MeshStandardMaterial({ color: 0x4a7c59, roughness: 0.8, flatShading: true });
+        this.terrainMesh = new THREE.Mesh(geom, mat);
+        this.terrainMesh.receiveShadow = true;
+        this.terrainMesh.castShadow = true;
+        Engine.renderer3D.scene.add(this.terrainMesh);
+        
+        if (this.waterEnabled) this.createWater();
+        
+        Console.success('Terrain generated!');
+    },
+    
+    createWater() {
+        if (this.waterMesh) {
+            Engine.renderer3D.scene.remove(this.waterMesh);
+            this.waterMesh.geometry.dispose();
+            this.waterMesh.material.dispose();
+        }
+        
+        const waterGeom = new THREE.PlaneGeometry(30, 30);
+        const waterMat = new THREE.MeshStandardMaterial({
+            color: 0x1e90ff,
+            transparent: true,
+            opacity: 0.6,
+            roughness: 0.1,
+            metalness: 0.8
+        });
+        
+        this.waterMesh = new THREE.Mesh(waterGeom, waterMat);
+        this.waterMesh.rotation.x = -Math.PI / 2;
+        this.waterMesh.position.y = this.waterLevel * 5;
+        Engine.renderer3D.scene.add(this.waterMesh);
+    },
+    
+    randomize() {
+        for (let i = 0; i < this.size * this.size; i++) {
+            const x = i % this.size;
+            const z = Math.floor(i / this.size);
+            this.heights[i] = (Math.sin(x * 0.2) * Math.cos(z * 0.2) + 1) * 0.3 + Math.random() * 0.2;
+        }
+        this.generate();
+    }
+};
+
+// ==================== PREFAB LIBRARY (Pre-made 3D Models) ====================
+const PrefabLibrary = {
+    prefabs: {
+        // Car - made from boxes
+        car: {
+            name: 'Car',
+            icon: '🚗',
+            desc: 'Simple vehicle',
+            create: () => {
+                const car = Engine.activeScene.createGameObject('Car');
+                
+                // Body
+                const body = car.addComponent('MeshRenderer');
+                body.geometry = 'box';
+                body.color = '#e53e3e';
+                car.transform.scale = { x: 2, y: 0.5, z: 4 };
+                car.transform.position.y = 0.5;
+                
+                // Create cabin as child
+                const cabin = Engine.activeScene.createGameObject('Cabin');
+                const cabinMesh = cabin.addComponent('MeshRenderer');
+                cabinMesh.geometry = 'box';
+                cabinMesh.color = '#2b6cb0';
+                cabin.transform.position = { x: 0, y: 1, z: 0 };
+                cabin.transform.scale = { x: 1.5, y: 0.5, z: 2 };
+                car.children.push(cabin);
+                
+                // Wheels
+                for (let i = 0; i < 4; i++) {
+                    const wheel = Engine.activeScene.createGameObject('Wheel' + i);
+                    const wheelMesh = wheel.addComponent('MeshRenderer');
+                    wheelMesh.geometry = 'cylinder';
+                    wheelMesh.color = '#1a1a1a';
+                    wheel.transform.rotation.z = Math.PI / 2;
+                    wheel.transform.scale = { x: 0.3, y: 0.2, z: 0.3 };
+                    wheel.transform.position = {
+                        x: (i % 2 === 0 ? -1 : 1),
+                        y: 0.15,
+                        z: (i < 2 ? -1.2 : 1.2)
+                    };
+                    car.children.push(wheel);
+                }
+                
+                return car;
+            }
+        },
+        
+        // Human - made from capsule and boxes
+        human: {
+            name: 'Human',
+            icon: '🧍',
+            desc: 'Basic humanoid',
+            create: () => {
+                const human = Engine.activeScene.createGameObject('Human');
+                
+                // Body
+                const body = human.addComponent('MeshRenderer');
+                body.geometry = 'capsule';
+                body.color = '#48bb78';
+                human.transform.scale = { x: 0.8, y: 1.2, z: 0.8 };
+                human.transform.position.y = 1.2;
+                
+                // Head
+                const head = Engine.activeScene.createGameObject('Head');
+                const headMesh = head.addComponent('MeshRenderer');
+                headMesh.geometry = 'sphere';
+                headMesh.color = '#fbd38d';
+                head.transform.position = { x: 0, y: 2.2, z: 0 };
+                head.transform.scale = { x: 0.5, y: 0.5, z: 0.5 };
+                human.children.push(head);
+                
+                // Arms
+                for (let i = 0; i < 2; i++) {
+                    const arm = Engine.activeScene.createGameObject('Arm' + i);
+                    const armMesh = arm.addComponent('MeshRenderer');
+                    armMesh.geometry = 'capsule';
+                    armMesh.color = '#48bb78';
+                    arm.transform.position = { x: (i === 0 ? -0.6 : 0.6), y: 1.5, z: 0 };
+                    arm.transform.scale = { x: 0.2, y: 0.6, z: 0.2 };
+                    human.children.push(arm);
+                }
+                
+                // Legs
+                for (let i = 0; i < 2; i++) {
+                    const leg = Engine.activeScene.createGameObject('Leg' + i);
+                    const legMesh = leg.addComponent('MeshRenderer');
+                    legMesh.geometry = 'capsule';
+                    legMesh.color = '#2b6cb0';
+                    leg.transform.position = { x: (i === 0 ? -0.25 : 0.25), y: 0.4, z: 0 };
+                    leg.transform.scale = { x: 0.25, y: 0.5, z: 0.25 };
+                    human.children.push(leg);
+                }
+                
+                return human;
+            }
+        },
+        
+        // House - made from boxes and cone
+        house: {
+            name: 'House',
+            icon: '🏠',
+            desc: 'Simple house',
+            create: () => {
+                const house = Engine.activeScene.createGameObject('House');
+                
+                // Main structure
+                const body = house.addComponent('MeshRenderer');
+                body.geometry = 'box';
+                body.color = '#f6e05e';
+                house.transform.scale = { x: 4, y: 3, z: 4 };
+                house.transform.position.y = 1.5;
+                
+                // Roof
+                const roof = Engine.activeScene.createGameObject('Roof');
+                const roofMesh = roof.addComponent('MeshRenderer');
+                roofMesh.geometry = 'cone';
+                roofMesh.color = '#c53030';
+                roof.transform.position = { x: 0, y: 4, z: 0 };
+                roof.transform.scale = { x: 3.5, y: 2, z: 3.5 };
+                house.children.push(roof);
+                
+                // Door
+                const door = Engine.activeScene.createGameObject('Door');
+                const doorMesh = door.addComponent('MeshRenderer');
+                doorMesh.geometry = 'box';
+                doorMesh.color = '#744210';
+                door.transform.position = { x: 0, y: 0.75, z: 2.05 };
+                door.transform.scale = { x: 0.8, y: 1.5, z: 0.1 };
+                house.children.push(door);
+                
+                // Windows
+                for (let i = 0; i < 2; i++) {
+                    const window = Engine.activeScene.createGameObject('Window' + i);
+                    const windowMesh = window.addComponent('MeshRenderer');
+                    windowMesh.geometry = 'box';
+                    windowMesh.color = '#63b3ed';
+                    window.transform.position = { x: (i === 0 ? -1 : 1), y: 1.8, z: 2.05 };
+                    window.transform.scale = { x: 0.6, y: 0.6, z: 0.1 };
+                    house.children.push(window);
+                }
+                
+                // Chimney
+                const chimney = Engine.activeScene.createGameObject('Chimney');
+                const chimneyMesh = chimney.addComponent('MeshRenderer');
+                chimneyMesh.geometry = 'box';
+                chimneyMesh.color = '#7a7a7a';
+                chimney.transform.position = { x: 1.2, y: 4.5, z: -0.5 };
+                chimney.transform.scale = { x: 0.5, y: 1.5, z: 0.5 };
+                house.children.push(chimney);
+                
+                return house;
+            }
+        },
+        
+        // Tree
+        tree: {
+            name: 'Tree',
+            icon: '🌳',
+            desc: 'Simple tree',
+            create: () => {
+                const tree = Engine.activeScene.createGameObject('Tree');
+                
+                // Trunk
+                const trunk = tree.addComponent('MeshRenderer');
+                trunk.geometry = 'cylinder';
+                trunk.color = '#744210';
+                tree.transform.scale = { x: 0.4, y: 2, z: 0.4 };
+                tree.transform.position.y = 1;
+                
+                // Leaves
+                const leaves = Engine.activeScene.createGameObject('Leaves');
+                const leavesMesh = leaves.addComponent('MeshRenderer');
+                leavesMesh.geometry = 'cone';
+                leavesMesh.color = '#276749';
+                leaves.transform.position = { x: 0, y: 3.5, z: 0 };
+                leaves.transform.scale = { x: 2, y: 3, z: 2 };
+                tree.children.push(leaves);
+                
+                return tree;
+            }
+        }
+    },
+    
+    createPrefab(name) {
+        if (this.prefabs[name]) {
+            const go = this.prefabs[name].create();
+            Console.success(`Created prefab: ${name}`);
+            Editor.selectGameObject(go);
+            Editor.hideModal();
+        }
+    }
+};
+
+// ==================== ASSET BROWSER ====================
+const AssetBrowser = {
+    assets: [],
+    
+    init() {
+        const stored = localStorage.getItem('webengine_assets');
+        this.assets = stored ? JSON.parse(stored) : [];
+    },
+    
+    save() {
+        try {
+            localStorage.setItem('webengine_assets', JSON.stringify(this.assets));
+        } catch (e) {
+            Console.error('Failed to save assets: Storage full');
+        }
+    },
+    
+    addAsset(asset) {
+        asset.id = Utils.generateId();
+        asset.created = Date.now();
+        this.assets.push(asset);
+        this.save();
+        return asset;
+    },
+    
+    removeAsset(id) {
+        this.assets = this.assets.filter(a => a.id !== id);
+        this.save();
+    },
+    
+    getByType(type) {
+        return this.assets.filter(a => a.type === type);
+    }
+};
+
+// ==================== EDITOR ====================
+const Editor = {
+    selectedGameObject: null,
+    
+    init() {
+        this.setupEventListeners();
+        this.renderHierarchy();
+    },
+    
+    setupEventListeners() {
+        const canvas = document.getElementById('scene-canvas');
+        
+        canvas.addEventListener('click', (e) => {
+            if (Engine.isPlaying) return;
+            const go = Engine.renderer3D.raycastFromMouse(e.clientX, e.clientY, canvas);
+            if (go) this.selectGameObject(go);
+        });
+        
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            if (this.selectedGameObject && !Engine.isPlaying) {
+                const menu = document.getElementById('context-menu');
+                menu.style.left = e.clientX + 'px';
+                menu.style.top = e.clientY + 'px';
+                menu.classList.add('show');
+            }
+        });
+        
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.context-menu')) document.getElementById('context-menu').classList.remove('show');
+        });
+        
+        document.getElementById('hierarchy-content').addEventListener('click', (e) => {
+            const item = e.target.closest('.hierarchy-item');
+            if (item) {
+                const go = Engine.activeScene.findById(item.dataset.id);
+                if (go) this.selectGameObject(go);
+            }
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            if (e.key === 'Delete' && this.selectedGameObject && !Engine.isPlaying) this.deleteSelected();
+        });
+    },
+    
+    selectGameObject(go) {
+        this.selectedGameObject = go;
+        this.renderHierarchy();
+        this.renderInspector();
+    },
+    
+    renderHierarchy() {
+        const container = document.getElementById('hierarchy-content');
+        const scene = Engine.activeScene;
+        if (!scene) return;
+        
+        const renderItem = (go, indent = 0) => {
+            const isSelected = this.selectedGameObject && this.selectedGameObject.id === go.id;
+            const icon = go.tag === 'Player' ? '🎮' : go.getComponent('Light') ? '💡' : go.getComponent('MeshRenderer') ? '🔲' : '📦';
+            
+            let html = `<div class="hierarchy-item ${isSelected ? 'selected' : ''}" data-id="${go.id}" style="margin-left: ${indent * 12}px">
+                <span>${icon}</span><span>${go.name}</span>
+            </div>`;
+            go.children.forEach(child => { html += renderItem(child, indent + 1); });
+            return html;
+        };
+        
+        container.innerHTML = scene.gameObjects.map(go => renderItem(go)).join('') || '<p style="color: var(--text-secondary); text-align: center;">Empty scene</p>';
+    },
+    
+    renderInspector() {
+        const container = document.getElementById('inspector-content');
+        const go = this.selectedGameObject;
+        
+        if (!go) {
+            container.innerHTML = '<p style="color: var(--text-secondary); font-size: 11px; text-align: center; margin-top: 20px;">Select a GameObject</p>';
+            return;
+        }
+        
+        let html = `
+            <div class="component-section">
+                <div class="component-header"><span>📦 ${go.name}</span></div>
+                <div class="component-body">
+                    <div class="property-row">
+                        <span class="property-label">Name</span>
+                        <input class="property-input" value="${go.name}" onchange="Editor.updateProperty('name', this.value)">
+                    </div>
+                    <div class="property-row">
+                        <span class="property-label">Tag</span>
+                        <input class="property-input" value="${go.tag}" onchange="Editor.updateProperty('tag', this.value)">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="component-section">
+                <div class="component-header"><span>🔄 Transform</span></div>
+                <div class="component-body">
+                    <div class="property-row">
+                        <span class="property-label">Position</span>
+                        <div class="vector-input">
+                            <div><span class="label">X</span><input type="number" step="0.1" value="${go.transform.position.x.toFixed(2)}" onchange="Editor.updateTransform('position', 'x', parseFloat(this.value))"></div>
+                            <div><span class="label">Y</span><input type="number" step="0.1" value="${go.transform.position.y.toFixed(2)}" onchange="Editor.updateTransform('position', 'y', parseFloat(this.value))"></div>
+                            <div><span class="label">Z</span><input type="number" step="0.1" value="${go.transform.position.z.toFixed(2)}" onchange="Editor.updateTransform('position', 'z', parseFloat(this.value))"></div>
+                        </div>
+                    </div>
+                    <div class="property-row">
+                        <span class="property-label">Scale</span>
+                        <div class="vector-input">
+                            <div><span class="label">X</span><input type="number" step="0.1" value="${go.transform.scale.x.toFixed(2)}" onchange="Editor.updateTransform('scale', 'x', parseFloat(this.value))"></div>
+                            <div><span class="label">Y</span><input type="number" step="0.1" value="${go.transform.scale.y.toFixed(2)}" onchange="Editor.updateTransform('scale', 'y', parseFloat(this.value))"></div>
+                            <div><span class="label">Z</span><input type="number" step="0.1" value="${go.transform.scale.z.toFixed(2)}" onchange="Editor.updateTransform('scale', 'z', parseFloat(this.value))"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        go.components.forEach((comp, name) => {
+            if (name === 'Transform') return;
+            html += `
+                <div class="component-section">
+                    <div class="component-header">
+                        <span>🔧 ${name}</span>
+                        <button class="btn-small danger" onclick="Editor.removeComponent('${name}')">✕</button>
+                    </div>
+                    <div class="component-body">${this.renderComponentProperties(comp)}</div>
+                </div>
+            `;
+        });
+        
+        html += `
+            <div class="dropdown" style="width: 100%; margin-top: 8px;">
+                <button class="btn-small" style="width: 100%;" onclick="Editor.toggleComponentDropdown()">➕ Add Component</button>
+                <div class="dropdown-content" id="component-dropdown">
+                    <div class="dropdown-category">Rendering</div>
+                    <div class="dropdown-item" onclick="Editor.addComponent('MeshRenderer')">Mesh Renderer</div>
+                    <div class="dropdown-item" onclick="Editor.addComponent('Light')">Light</div>
+                    <div class="dropdown-item" onclick="Editor.addComponent('ParticleEmitter')">Particle Emitter</div>
+                    <div class="dropdown-category">Physics</div>
+                    <div class="dropdown-item" onclick="Editor.addComponent('Rigidbody')">Rigidbody</div>
+                    <div class="dropdown-item" onclick="Editor.addComponent('Collider3D')">Collider 3D</div>
+                    <div class="dropdown-category">Gameplay</div>
+                    <div class="dropdown-item" onclick="Editor.addComponent('TransformController')">Transform Controller</div>
+                    <div class="dropdown-item" onclick="Editor.addComponent('CameraFollow')">Camera Follow</div>
+                    <div class="dropdown-item" onclick="Editor.addComponent('HealthSystem')">Health System</div>
+                    <div class="dropdown-item" onclick="Editor.addComponent('PathFollower')">Path Follower</div>
+                    <div class="dropdown-category">Effects</div>
+                    <div class="dropdown-item" onclick="Editor.addComponent('Rotator')">Rotator</div>
+                    <div class="dropdown-item" onclick="Editor.addComponent('Bouncer')">Bouncer</div>
+                    <div class="dropdown-item" onclick="Editor.addComponent('LightFlicker')">Light Flicker</div>
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML = html;
+    },
+    
+    renderComponentProperties(comp) {
+        const data = comp.serialize();
+        let html = '';
+        
+        for (const [key, value] of Object.entries(data)) {
+            if (key === 'type') continue;
+            
+            if (typeof value === 'boolean') {
+                html += `<div class="property-row"><span class="property-label">${key}</span>
+                    <input type="checkbox" ${value ? 'checked' : ''} onchange="Editor.updateComponentProp('${comp.constructor.name}', '${key}', this.checked)"></div>`;
+            } else if (typeof value === 'number') {
+                html += `<div class="property-row"><span class="property-label">${key}</span>
+                    <input type="number" step="0.1" class="property-input" value="${value}" onchange="Editor.updateComponentProp('${comp.constructor.name}', '${key}', parseFloat(this.value))"></div>`;
+            } else if (typeof value === 'string') {
+                if (key.toLowerCase().includes('color')) {
+                    html += `<div class="property-row"><span class="property-label">${key}</span>
+                        <input type="color" value="${value}" onchange="Editor.updateComponentProp('${comp.constructor.name}', '${key}', this.value)"></div>`;
+                } else if (key === 'geometry') {
+                    html += `<div class="property-row"><span class="property-label">${key}</span>
+                        <select class="property-input" onchange="Editor.updateComponentProp('${comp.constructor.name}', '${key}', this.value)">
+                            ${['box','sphere','cylinder','cone','torus','capsule','plane'].map(g => `<option value="${g}" ${value === g ? 'selected' : ''}>${g}</option>`).join('')}
+                        </select></div>`;
+                } else if (key === 'lightType') {
+                    html += `<div class="property-row"><span class="property-label">${key}</span>
+                        <select class="property-input" onchange="Editor.updateComponentProp('${comp.constructor.name}', '${key}', this.value)">
+                            ${['point','directional','spot'].map(t => `<option value="${t}" ${value === t ? 'selected' : ''}>${t}</option>`).join('')}
+                        </select></div>`;
+                } else {
+                    html += `<div class="property-row"><span class="property-label">${key}</span>
+                        <input type="text" class="property-input" value="${value}" onchange="Editor.updateComponentProp('${comp.constructor.name}', '${key}', this.value)"></div>`;
+                }
+            } else if (value && typeof value === 'object' && 'x' in value) {
+                html += `<div class="property-row"><span class="property-label">${key}</span>
+                    <div class="vector-input">
+                        <input type="number" step="0.1" value="${value.x}" onchange="Editor.updateComponentVec('${comp.constructor.name}', '${key}', 'x', parseFloat(this.value))">
+                        <input type="number" step="0.1" value="${value.y}" onchange="Editor.updateComponentVec('${comp.constructor.name}', '${key}', 'y', parseFloat(this.value))">
+                        <input type="number" step="0.1" value="${value.z || 0}" onchange="Editor.updateComponentVec('${comp.constructor.name}', '${key}', 'z', parseFloat(this.value))">
+                    </div></div>`;
+            }
+        }
+        
+        return html;
+    },
+    
+    toggleComponentDropdown() { document.getElementById('component-dropdown').classList.toggle('show'); },
+    
+    updateProperty(prop, value) {
+        if (this.selectedGameObject) {
+            this.selectedGameObject[prop] = value;
+            this.renderHierarchy();
+        }
+    },
+    
+    updateTransform(type, axis, value) {
+        if (this.selectedGameObject) {
+            this.selectedGameObject.transform[type][axis] = value;
+            const mesh = this.selectedGameObject.getComponent('MeshRenderer');
+            if (mesh) mesh.updateMeshTransform();
+        }
+    },
+    
+    updateComponentProp(compName, prop, value) {
+        if (this.selectedGameObject) {
+            const comp = this.selectedGameObject.getComponent(compName);
+            if (comp) {
+                comp[prop] = value;
+                if (compName === 'MeshRenderer' && (prop === 'geometry' || prop === 'color')) comp.createMesh();
+                if (compName === 'Light' && prop === 'lightType') comp.createLight();
+            }
+        }
+    },
+    
+    updateComponentVec(compName, prop, axis, value) {
+        if (this.selectedGameObject) {
+            const comp = this.selectedGameObject.getComponent(compName);
+            if (comp && comp[prop]) comp[prop][axis] = value;
+        }
+    },
+    
+    addComponent(name) {
+        if (this.selectedGameObject) {
+            this.selectedGameObject.addComponent(name);
+            Console.log(`Added ${name}`);
+            this.renderInspector();
+        }
+        document.getElementById('component-dropdown').classList.remove('show');
+    },
+    
+    removeComponent(name) {
+        if (this.selectedGameObject) {
+            this.selectedGameObject.removeComponent(name);
+            this.renderInspector();
+        }
+    },
+    
+    createGameObject(name = 'GameObject') {
+        const go = Engine.activeScene.createGameObject(name);
+        this.selectGameObject(go);
+        return go;
+    },
+    
+    deleteSelected() {
+        if (this.selectedGameObject) {
+            this.selectedGameObject.destroy();
+            this.selectedGameObject = null;
+            this.renderHierarchy();
+            this.renderInspector();
+        }
+    },
+    
+    duplicateSelected() {
+        if (this.selectedGameObject) {
+            const data = this.selectedGameObject.serialize();
+            data.id = Utils.generateId();
+            data.name = this.selectedGameObject.name + ' (Copy)';
+            const pos = data.components.find(c => c.type === 'Transform');
+            if (pos && pos.position) pos.position.x += 2;
+            
+            const newGo = GameObject.deserialize(data);
+            Engine.activeScene.gameObjects.push(newGo);
+            this.selectGameObject(newGo);
+            document.getElementById('context-menu').classList.remove('show');
+        }
+    },
+    
+    toggleGrid() {
+        Engine.renderer3D.grid.visible = !Engine.renderer3D.grid.visible;
+        document.getElementById('btn-grid').classList.toggle('active', Engine.renderer3D.grid.visible);
+    },
+    
+    toggleGizmos() {
+        document.getElementById('btn-gizmos').classList.toggle('active');
+    },
+    
+    hideModal() { document.getElementById('modal').classList.remove('show'); },
+    
+    showCreateMenu() {
+        const modal = document.getElementById('modal');
+        document.getElementById('modal-header').textContent = 'Create Object';
+        document.getElementById('modal-body').innerHTML = `
+            <div class="asset-grid">
+                <div class="asset-item" onclick="Editor.createPrimitive('box', 'Cube')"><div class="asset-icon">🔲</div><span>Cube</span></div>
+                <div class="asset-item" onclick="Editor.createPrimitive('sphere', 'Sphere')"><div class="asset-icon">⚪</div><span>Sphere</span></div>
+                <div class="asset-item" onclick="Editor.createPrimitive('cylinder', 'Cylinder')"><div class="asset-icon">🔷</div><span>Cylinder</span></div>
+                <div class="asset-item" onclick="Editor.createPrimitive('cone', 'Cone')"><div class="asset-icon">🔺</div><span>Cone</span></div>
+                <div class="asset-item" onclick="Editor.createPrimitive('torus', 'Torus')"><div class="asset-icon">⭕</div><span>Torus</span></div>
+                <div class="asset-item" onclick="Editor.createPrimitive('capsule', 'Capsule')"><div class="asset-icon">💊</div><span>Capsule</span></div>
+                <div class="asset-item" onclick="Editor.createPrimitive('plane', 'Plane')"><div class="asset-icon">▬</div><span>Plane</span></div>
+                <div class="asset-item" onclick="Editor.createLight()"><div class="asset-icon">💡</div><span>Light</span></div>
+                <div class="asset-item" onclick="Editor.createParticles()"><div class="asset-icon">✨</div><span>Particles</span></div>
+                <div class="asset-item" onclick="Editor.createPlayer()"><div class="asset-icon">🎮</div><span>Player</span></div>
+                <div class="asset-item" onclick="Editor.createEmpty()"><div class="asset-icon">📦</div><span>Empty</span></div>
+            </div>
+        `;
+        document.getElementById('modal-footer').innerHTML = '<button class="btn-small" onclick="Editor.hideModal()">Close</button>';
+        modal.classList.add('show');
+    },
+    
+    createPrimitive(geometry, name) {
+        const go = this.createGameObject(name);
+        const mesh = go.addComponent('MeshRenderer');
+        mesh.geometry = geometry;
+        go.transform.position.y = geometry === 'plane' ? 0 : 0.5;
+        if (geometry === 'plane') go.transform.rotation.x = -Math.PI / 2;
+        this.hideModal();
+    },
+    
+    createLight() {
+        const go = this.createGameObject('Light');
+        go.addComponent('Light');
+        go.transform.position = { x: 5, y: 5, z: 5 };
+        this.hideModal();
+    },
+    
+    createParticles() {
+        const go = this.createGameObject('Particles');
+        go.addComponent('ParticleEmitter');
+        go.transform.position.y = 2;
+        this.hideModal();
+    },
+    
+    createPlayer() {
+        const go = this.createGameObject('Player');
+        go.tag = 'Player';
+        
+        const mesh = go.addComponent('MeshRenderer');
+        mesh.geometry = 'capsule';
+        mesh.color = '#48bb78';
+        
+        go.addComponent('Collider3D').shapeType = 'capsule';
+        go.addComponent('Rigidbody');
+        go.addComponent('TransformController');
+        go.addComponent('HealthSystem');
+        
+        go.transform.position.y = 1;
+        this.hideModal();
+        Console.success('Player created!');
+    },
+    
+    createEmpty() {
+        this.createGameObject('Empty');
+        this.hideModal();
+    },
+    
+    showAssetBrowser() {
+        const modal = document.getElementById('modal');
+        document.getElementById('modal-header').textContent = '🎨 Asset Browser';
+        document.getElementById('modal-body').innerHTML = `
+            <div class="asset-browser-header">
+                <input type="text" class="asset-search" placeholder="Search assets..." oninput="Editor.filterAssets(this.value)">
+                <button class="btn-small" onclick="Editor.importAsset()">📁 Import</button>
+            </div>
+            
+            <div class="asset-category">
+                <div class="asset-category-title">Textures</div>
+                <div class="asset-grid" id="texture-assets">
+                    <div class="asset-item" title="Checker"><div class="asset-icon" style="background: repeating-conic-gradient(#808080 0% 25%, #ffffff 0% 50%) 50% / 20px 20px;">🏁</div><span>Checker</span></div>
+                    <div class="asset-item" title="Gradient"><div class="asset-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">🌈</div><span>Gradient</span></div>
+                    <div class="asset-item" title="Noise"><div class="asset-icon" style="background: #888;">🔲</div><span>Noise</span></div>
+                </div>
+            </div>
+            
+            <div class="asset-category">
+                <div class="asset-category-title">Materials</div>
+                <div class="asset-grid">
+                    <div class="asset-item"><div class="asset-icon" style="background: #ffffff;">⬜</div><span>White</span></div>
+                    <div class="asset-item"><div class="asset-icon" style="background: linear-gradient(135deg, #888 0%, #ccc 50%, #888 100%);">🔘</div><span>Metal</span></div>
+                    <div class="asset-item"><div class="asset-icon" style="background: #e8e8e8;">📄</div><span>Plastic</span></div>
+                </div>
+            </div>
+            
+            <div class="asset-category">
+                <div class="asset-category-title">Audio</div>
+                <div class="asset-grid">
+                    <div class="asset-item"><div class="asset-icon">🔊</div><span>Click</span></div>
+                    <div class="asset-item"><div class="asset-icon">🎵</div><span>Music</span></div>
+                </div>
+            </div>
+        `;
+        document.getElementById('modal-footer').innerHTML = '<button class="btn-small" onclick="Editor.hideModal()">Close</button>';
+        modal.classList.add('show');
+    },
+    
+    showPrefabLibrary() {
+        const modal = document.getElementById('modal');
+        document.getElementById('modal-header').textContent = '📁 Prefab Library';
+        document.getElementById('modal-body').innerHTML = `
+            <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 15px;">Pre-made 3D models ready to use in your scene:</p>
+            <div class="prefab-models">
+                ${Object.entries(PrefabLibrary.prefabs).map(([key, prefab]) => `
+                    <div class="prefab-item" onclick="PrefabLibrary.createPrefab('${key}')">
+                        <div class="prefab-preview">${prefab.icon}</div>
+                        <div class="prefab-name">${prefab.name}</div>
+                        <div class="prefab-desc">${prefab.desc}</div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        document.getElementById('modal-footer').innerHTML = '<button class="btn-small" onclick="Editor.hideModal()">Close</button>';
+        modal.classList.add('show');
+    },
+    
+    showSpriteCreator() {
+        const modal = document.getElementById('modal');
+        document.getElementById('modal-header').textContent = '🖼️ Create Sprite';
+        document.getElementById('modal-body').innerHTML = `
+            <div class="draw-tools">
+                <label>Color: <input type="color" id="draw-color" value="#ff0000"></label>
+                <label>Size: <input type="range" id="draw-size" min="1" max="50" value="5"></label>
+                <button class="btn-small" onclick="Editor.clearDrawCanvas()">Clear</button>
+                <button class="btn-small" onclick="Editor.fillDrawCanvas()">Fill</button>
+            </div>
+            <canvas id="draw-modal-canvas" width="256" height="256"></canvas>
+        `;
+        document.getElementById('modal-footer').innerHTML = `
+            <button class="btn-small" onclick="Editor.createSpriteFromCanvas()">Create Object</button>
+            <button class="btn-small" onclick="Editor.hideModal()">Cancel</button>
+        `;
+        modal.classList.add('show');
+        
+        setTimeout(() => {
+            const canvas = document.getElementById('draw-modal-canvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, 256, 256);
+                
+                let isDrawing = false;
+                canvas.addEventListener('mousedown', () => { isDrawing = true; });
+                canvas.addEventListener('mouseup', () => { isDrawing = false; });
+                canvas.addEventListener('mouseleave', () => { isDrawing = false; });
+                canvas.addEventListener('mousemove', (e) => {
+                    if (!isDrawing) return;
+                    const rect = canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    const color = document.getElementById('draw-color').value;
+                    const size = document.getElementById('draw-size').value;
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+        }, 50);
+    },
+    
+    clearDrawCanvas() {
+        const canvas = document.getElementById('draw-modal-canvas');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, 256, 256);
+        }
+    },
+    
+    fillDrawCanvas() {
+        const canvas = document.getElementById('draw-modal-canvas');
+        const color = document.getElementById('draw-color').value;
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, 256, 256);
+        }
+    },
+    
+    createSpriteFromCanvas() {
+        const canvas = document.getElementById('draw-modal-canvas');
+        if (!canvas) return;
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        
+        const go = Engine.activeScene.createGameObject('Sprite');
+        
+        const geom = new THREE.PlaneGeometry(2, 2);
+        const mat = new THREE.MeshStandardMaterial({ map: texture, side: THREE.DoubleSide, transparent: true });
+        
+        const mesh = new THREE.Mesh(geom, mat);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        mesh.userData.gameObjectId = go.id;
+        
+        Engine.renderer3D.scene.add(mesh);
+        go.transform.position.y = 1;
+        go._customMesh = mesh;
+        
+        this.selectGameObject(go);
+        this.hideModal();
+        Console.success('Sprite created!');
+    },
+    
+    filterAssets(query) {
+        // Simple filter implementation
+        Console.log(`Filtering: ${query}`);
+    },
+    
+    importAsset() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*,audio/*';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                Console.log(`Importing: ${file.name}`);
+                // Handle file import
+            }
+        };
+        input.click();
+    }
+};
+
+// ==================== MAIN ENGINE ====================
+const Engine = {
+    activeScene: null,
+    renderer3D: Renderer3D,
+    physics: PhysicsSystem,
+    isPlaying: false,
+    time: 0,
+    deltaTime: 0,
+    lastTime: 0,
+    fps: 60,
+    frameCount: 0,
+    fpsTime: 0,
+    savedSceneData: null,
+    
+    init() {
+        Console.log('Initializing WebEngine Pro...');
+        
+        Input.init();
+        PhysicsSystem.init();
+        TerrainEditor.init();
+        AssetBrowser.init();
+        
+        const canvas = document.getElementById('scene-canvas');
+        const sceneView = document.getElementById('scene-view');
+        
+        canvas.width = sceneView.clientWidth;
+        canvas.height = sceneView.clientHeight;
+        
+        Renderer3D.init(canvas);
+        
+        this.activeScene = new Scene('Demo Scene');
+        
+        Editor.init();
+        
+        this.createDemoScene();
+        
+        window.addEventListener('resize', () => this.resize());
+        
+        this.lastTime = performance.now();
+        this.gameLoop();
+        
+        Console.success('WebEngine Pro ready!');
+    },
+    
+    createDemoScene() {
+        // Ground
+        const ground = this.activeScene.createGameObject('Ground');
+        const groundMesh = ground.addComponent('MeshRenderer');
+        groundMesh.geometry = 'plane';
+        groundMesh.color = '#3d6b3d';
+        ground.transform.rotation.x = -Math.PI / 2;
+        ground.transform.scale = { x: 3, y: 3, z: 3 };
+        
+        // Player
+        const player = this.activeScene.createGameObject('Player');
+        player.tag = 'Player';
+        
+        const playerMesh = player.addComponent('MeshRenderer');
+        playerMesh.geometry = 'capsule';
+        playerMesh.color = '#48bb78';
+        
+        player.addComponent('Collider3D').shapeType = 'capsule';
+        player.addComponent('Rigidbody');
+        player.addComponent('TransformController');
+        player.addComponent('HealthSystem');
+        
+        player.transform.position = { x: 0, y: 1, z: 0 };
+        
+        // Camera
+        const camera = this.activeScene.createGameObject('MainCamera');
+        camera.addComponent('CameraFollow');
+        camera.transform.position = { x: 0, y: 5, z: 10 };
+        
+        // Some objects
+        const box = this.activeScene.createGameObject('Rotating Box');
+        box.addComponent('MeshRenderer').color = '#e53e3e';
+        box.addComponent('Rotator');
+        box.transform.position = { x: 4, y: 0.5, z: -3 };
+        
+        const sphere = this.activeScene.createGameObject('Bouncing Sphere');
+        const sphereMesh = sphere.addComponent('MeshRenderer');
+        sphereMesh.geometry = 'sphere';
+        sphereMesh.color = '#ecc94b';
+        sphere.addComponent('Bouncer');
+        sphere.transform.position = { x: -4, y: 1, z: -3 };
+        
+        Editor.renderHierarchy();
+        Console.log('Demo scene with playable Player created!');
+        Console.log('Press PLAY to test. Use WASD + Space to move.');
+    },
+    
+    gameLoop() {
+        const currentTime = performance.now();
+        this.deltaTime = Math.min((currentTime - this.lastTime) / 1000, 0.1);
+        this.lastTime = currentTime;
+        
+        this.frameCount++;
+        this.fpsTime += this.deltaTime;
+        if (this.fpsTime >= 1) {
+            this.fps = this.frameCount;
+            this.frameCount = 0;
+            this.fpsTime = 0;
+            document.getElementById('fps-display').textContent = `FPS: ${this.fps}`;
+        }
+        
+        if (this.isPlaying) {
+            this.time += this.deltaTime;
+            this.physics.update(this.deltaTime);
+            this.activeScene.update(this.deltaTime);
+            TWEEN.update(currentTime);
+        } else {
+            this.activeScene.gameObjects.forEach(go => {
+                const mesh = go.getComponent('MeshRenderer');
+                if (mesh) mesh.updateMeshTransform();
+                const light = go.getComponent('Light');
+                if (light) light.updateLightTransform();
+                
+                if (go._customMesh) {
+                    go._customMesh.position.set(go.transform.position.x, go.transform.position.y, go.transform.position.z);
+                    go._customMesh.rotation.set(go.transform.rotation.x, go.transform.rotation.y, go.transform.rotation.z);
+                    go._customMesh.scale.set(go.transform.scale.x, go.transform.scale.y, go.transform.scale.z);
+                }
+            });
+        }
+        
+        Input.update();
+        this.renderer3D.render();
+        
+        requestAnimationFrame(() => this.gameLoop());
+    },
+    
+    play() {
+        if (this.isPlaying) return;
+        
+        Console.log('▶ Play mode started');
+        
+        this.savedSceneData = this.activeScene.serialize();
+        this.activeScene.start();
+        
+        this.isPlaying = true;
+        this.time = 0;
+        
+        document.getElementById('play-btn').textContent = '▶ Playing';
+        document.getElementById('play-btn').classList.remove('play');
+        document.getElementById('play-indicator').classList.add('show');
+        document.getElementById('instructions').classList.add('show');
+        document.getElementById('health-bar').classList.add('show');
+    },
+    
+    stop() {
+        if (!this.isPlaying) return;
+        
+        Console.log('⏹ Play mode stopped');
+        
+        this.isPlaying = false;
+        
+        this.physics.reset();
+        this.renderer3D.clear();
+        
+        if (this.savedSceneData) {
+            this.activeScene = Scene.deserialize(this.savedSceneData);
+            this.savedSceneData = null;
+        }
+        
+        document.getElementById('play-btn').textContent = '▶ Play';
+        document.getElementById('play-btn').classList.add('play');
+        document.getElementById('play-indicator').classList.remove('show');
+        document.getElementById('instructions').classList.remove('show');
+        document.getElementById('health-bar').classList.remove('show');
+        
+        Editor.selectedGameObject = null;
+        Editor.renderHierarchy();
+        Editor.renderInspector();
+    },
+    
+    resize() {
+        const sceneView = document.getElementById('scene-view');
+        const canvas = document.getElementById('scene-canvas');
+        
+        canvas.width = sceneView.clientWidth;
+        canvas.height = sceneView.clientHeight;
+        
+        this.renderer3D.resize(canvas.width, canvas.height);
+    },
+    
+    newProject() {
+        if (confirm('Create new project? Unsaved changes will be lost.')) {
+            this.stop();
+            this.renderer3D.clear();
+            this.activeScene = new Scene('Untitled');
+            document.getElementById('scene-name').textContent = this.activeScene.name;
+            Editor.selectedGameObject = null;
+            Editor.renderHierarchy();
+            Editor.renderInspector();
+            Console.log('New project created');
+        }
+    },
+    
+    saveScene() {
+        try {
+            const data = JSON.stringify(this.activeScene.serialize());
+            localStorage.setItem('webengine_scene_' + this.activeScene.name, data);
+            
+            let scenes = JSON.parse(localStorage.getItem('webengine_scenes') || '[]');
+            if (!scenes.includes(this.activeScene.name)) {
+                scenes.push(this.activeScene.name);
+                localStorage.setItem('webengine_scenes', JSON.stringify(scenes));
+            }
+            
+            Console.success(`Scene saved: ${this.activeScene.name}`);
+        } catch (e) {
+            Console.error('Failed to save: ' + e.message);
+        }
+    },
+    
+    loadScene() {
+        const scenes = JSON.parse(localStorage.getItem('webengine_scenes') || '[]');
+        
+        if (scenes.length === 0) {
+            Console.warn('No saved scenes');
+            return;
+        }
+        
+        const modal = document.getElementById('modal');
+        document.getElementById('modal-header').textContent = 'Load Scene';
+        document.getElementById('modal-body').innerHTML = `
+            <div class="asset-grid">
+                ${scenes.map(name => `
+                    <div class="asset-item" onclick="Engine.loadSceneByName('${name}')">
+                        <div class="asset-icon">🎬</div>
+                        <span>${name}</span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        document.getElementById('modal-footer').innerHTML = '<button class="btn-small" onclick="Editor.hideModal()">Cancel</button>';
+        modal.classList.add('show');
+    },
+    
+    loadSceneByName(name) {
+        try {
+            const data = localStorage.getItem('webengine_scene_' + name);
+            if (!data) { Console.error('Scene not found'); return; }
+            
+            this.stop();
+            this.renderer3D.clear();
+            
+            this.activeScene = Scene.deserialize(JSON.parse(data));
+            document.getElementById('scene-name').textContent = this.activeScene.name;
+            
+            Editor.selectedGameObject = null;
+            Editor.renderHierarchy();
+            Editor.hideModal();
+            
+            Console.success(`Loaded: ${name}`);
+        } catch (e) {
+            Console.error('Failed to load: ' + e.message);
+        }
+    },
+    
+    exportToHTML() {
+        const sceneData = JSON.stringify(this.activeScene.serialize());
+        
+        const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${this.activeScene.name} - WebEngine Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"><\/script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1a1a2e; overflow: hidden; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        #ui { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); color: white; font-family: sans-serif; text-align: center; }
+        #health { width: 200px; height: 20px; background: #333; border-radius: 10px; overflow: hidden; margin: 0 auto 10px; }
+        #health-fill { height: 100%; background: linear-gradient(90deg, #e53e3e, #48bb78); transition: width 0.3s; }
+        #controls { font-size: 12px; opacity: 0.7; }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <div id="health"><div id="health-fill" style="width: 100%;"></div></div>
+        <div id="controls">WASD - Move | Space - Jump | Shift - Run</div>
+    </div>
+    <canvas id="game"></canvas>
+    <script>
+        const sceneData = ${sceneData};
+        
+        // Minimal runtime engine
+        const Utils = { lerp: (a, b, t) => a + (b - a) * t, degToRad: d => d * Math.PI / 180 };
+        const Input = { keys: {}, keysDown: {} };
+        window.addEventListener('keydown', e => { if (!Input.keys[e.code]) Input.keysDown[e.code] = true; Input.keys[e.code] = true; });
+        window.addEventListener('keyup', e => { Input.keys[e.code] = false; });
+        
+        // Three.js setup
+        const canvas = document.getElementById('game');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x2a2a3e);
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 5, 10);
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+        
+        // Physics
+        const world = new CANNON.World();
+        world.gravity.set(0, -20, 0);
+        const groundBody = new CANNON.Body({ mass: 0 });
+        groundBody.addShape(new CANNON.Plane());
+        groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+        world.addBody(groundBody);
+        
+        // Game objects
+        const objects = [];
+        let playerObj = null;
+        let playerBody = null;
+        let health = 100;
+        
+        function createMesh(goData) {
+            const transform = goData.components.find(c => c.type === 'Transform');
+            const meshComp = goData.components.find(c => c.type === 'MeshRenderer');
+            
+            if (meshComp) {
+                let geom;
+                switch (meshComp.geometry) {
+                    case 'box': geom = new THREE.BoxGeometry(1, 1, 1); break;
+                    case 'sphere': geom = new THREE.SphereGeometry(0.5, 32, 32); break;
+                    case 'capsule': geom = new THREE.CapsuleGeometry(0.3, 0.6, 8, 16); break;
+                    case 'plane': geom = new THREE.PlaneGeometry(10, 10); break;
+                    default: geom = new THREE.BoxGeometry(1, 1, 1);
+                }
+                const mat = new THREE.MeshStandardMaterial({ color: meshComp.color });
+                const mesh = new THREE.Mesh(geom, mat);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                mesh.position.set(transform.position.x, transform.position.y, transform.position.z);
+                mesh.rotation.set(transform.rotation.x, transform.rotation.y, transform.rotation.z);
+                mesh.scale.set(transform.scale.x, transform.scale.y, transform.scale.z);
+                scene.add(mesh);
+                
+                const rbComp = goData.components.find(c => c.type === 'Rigidbody');
+                let body = null;
+                if (rbComp && goData.tag === 'Player') {
+                    const shape = new CANNON.Box(new CANNON.Vec3(0.3, 0.6, 0.3));
+                    body = new CANNON.Body({ mass: 1, shape, position: new CANNON.Vec3(transform.position.x, transform.position.y, transform.position.z) });
+                    body.linearDamping = 0.1;
+                    world.addBody(body);
+                    playerBody = body;
+                    playerObj = mesh;
+                }
+                
+                objects.push({ mesh, body, data: goData, startY: transform.position.y });
+            }
+        }
+        
+        sceneData.gameObjects.forEach(go => createMesh(go));
+        
+        let time = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = 1/60;
+            time += dt;
+            
+            // Player movement
+            if (playerBody) {
+                let speed = 5;
+                if (Input.keys['ShiftLeft']) speed *= 2;
+                
+                let mx = 0, mz = 0;
+                if (Input.keys['KeyW']) mz = -1;
+                if (Input.keys['KeyS']) mz = 1;
+                if (Input.keys['KeyA']) mx = -1;
+                if (Input.keys['KeyD']) mx = 1;
+                
+                playerBody.velocity.x = mx * speed;
+                playerBody.velocity.z = mz * speed;
+                
+                if (Input.keysDown['Space'] && playerBody.position.y < 1.5) {
+                    playerBody.velocity.y = 8;
+                }
+                
+                if (playerObj) {
+                    playerObj.position.copy(playerBody.position);
+                }
+                
+                camera.position.x = Utils.lerp(camera.position.x, playerBody.position.x, 0.1);
+                camera.position.y = Utils.lerp(camera.position.y, playerBody.position.y + 5, 0.1);
+                camera.position.z = Utils.lerp(camera.position.z, playerBody.position.z + 10, 0.1);
+                camera.lookAt(playerBody.position.x, playerBody.position.y + 1, playerBody.position.z);
+            }
+            
+            // Update animations
+            objects.forEach(obj => {
+                const rotator = obj.data.components.find(c => c.type === 'Rotator');
+                if (rotator) obj.mesh.rotation.y += Utils.degToRad(rotator.speedY * dt);
+                
+                const bouncer = obj.data.components.find(c => c.type === 'Bouncer');
+                if (bouncer) obj.mesh.position.y = obj.startY + Math.sin(time * bouncer.frequency * Math.PI * 2) * bouncer.amplitude;
+            });
+            
+            world.step(1/60, dt, 3);
+            Input.keysDown = {};
+            renderer.render(scene, camera);
+        }
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        animate();
+    <\/script>
+</body>
+</html>`;
+        
+        const blob = new Blob([html], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${this.activeScene.name.replace(/\s+/g, '_')}_game.html`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        Console.success('Project exported as HTML!');
+    }
+};
+
+// ==================== INITIALIZE ====================
+window.addEventListener('DOMContentLoaded', () => {
+    Engine.init();
+});
+</script>
+</body>
+</html>

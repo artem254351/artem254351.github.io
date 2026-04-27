@@ -1,0 +1,890 @@
+
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>City Builder: Next Gen</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+        :root {
+            --accent: #3498db;
+            --accent-hover: #2980b9;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --glass: rgba(20, 25, 30, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #ecf0f1;
+            --text-muted: #95a5a6;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: #111;
+            color: var(--text-main);
+            user-select: none;
+        }
+
+        /* --- UI: ОБЩЕЕ --- */
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            color: white;
+        }
+
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        button:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        button:active { transform: translateY(0); }
+
+        /* --- ГЛАВНОЕ МЕНЮ --- */
+        #main-menu {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: radial-gradient(circle at center, #2c3e50 0%, #000 100%);
+            z-index: 2000;
+        }
+        .menu-box {
+            width: 400px; padding: 40px; text-align: center;
+        }
+        .menu-box h1 {
+            font-size: 3rem; margin: 0 0 10px;
+            background: linear-gradient(45deg, #3498db, #2ecc71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .setting-row { margin: 20px 0; text-align: left; }
+        .setting-row label { display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 0.9rem; }
+        select {
+            width: 100%; padding: 12px;
+            background: rgba(0,0,0,0.3); border: 1px solid #444;
+            color: white; border-radius: 6px; font-size: 1rem;
+        }
+
+        /* --- ИГРОВОЙ UI --- */
+        #game-ui { display: none; pointer-events: none; width: 100%; height: 100%; position: absolute; top:0; left:0;}
+        
+        /* Верхняя панель */
+        .top-bar {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            padding: 10px 30px;
+            display: flex; gap: 30px; align-items: center;
+            pointer-events: auto;
+            white-space: nowrap;
+        }
+        .stat { display: flex; flex-direction: column; align-items: center; }
+        .stat-val { font-size: 1.2rem; font-weight: 800; }
+        .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .stat-val.money { color: #f1c40f; }
+        .stat-val.date { color: #3498db; }
+
+        /* Левая панель инструментов (Строительство) */
+        .build-panel {
+            position: absolute; left: 20px; top: 100px; bottom: 20px;
+            width: 280px;
+            display: flex; flex-direction: column;
+            pointer-events: auto;
+        }
+        .tabs { display: flex; padding: 10px; gap: 5px; }
+        .tab-btn { 
+            flex: 1; padding: 8px; font-size: 0.8rem; background: rgba(255,255,255,0.05); 
+            border: 1px solid transparent; 
+        }
+        .tab-btn.active { background: var(--accent); border-color: rgba(255,255,255,0.2); }
+
+        .build-list {
+            flex: 1; overflow-y: auto; padding: 10px;
+        }
+        /* Скроллбар */
+        .build-list::-webkit-scrollbar { width: 6px; }
+        .build-list::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+
+        .b-card {
+            background: rgba(255,255,255,0.05);
+            margin-bottom: 10px; padding: 12px;
+            border-radius: 8px; cursor: pointer;
+            border: 1px solid transparent;
+            transition: 0.2s;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 5px;
+        }
+        .b-card:hover { background: rgba(255,255,255,0.1); }
+        .b-card.selected { border-color: var(--accent); background: rgba(52, 152, 219, 0.1); }
+        .b-name { font-weight: 600; grid-column: 1 / -1; }
+        .b-cost { color: var(--success); font-size: 0.9rem; }
+        .b-desc { font-size: 0.75rem; color: #aaa; grid-column: 1 / -1; margin-top: 4px; line-height: 1.2;}
+
+        /* Кнопки управления */
+        .controls {
+            position: absolute; top: 20px; right: 20px;
+            pointer-events: auto; display: flex; gap: 10px;
+        }
+        .controls button { padding: 8px 12px; font-size: 0.8rem; background: #e74c3c; }
+        .controls button.save { background: #3498db; }
+
+        /* Тултип */
+        #tooltip {
+            position: absolute; pointer-events: none;
+            padding: 15px; z-index: 1000;
+            display: none; max-width: 250px;
+            font-size: 0.85rem; line-height: 1.4;
+        }
+
+        /* Канвас */
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+
+    <!-- МЕНЮ -->
+    <div id="main-menu">
+        <div class="menu-box glass-panel">
+            <h1>City Next Gen</h1>
+            <div class="setting-row">
+                <label>Сложность</label>
+                <select id="diff-select">
+                    <option value="easy">Легко ($1M)</option>
+                    <option value="normal" selected>Средне ($500k)</option>
+                    <option value="hard">Сложно ($250k)</option>
+                </select>
+            </div>
+            <div class="setting-row">
+                <label>Графика</label>
+                <select id="gfx-select">
+                    <option value="1">1 - Низкая</option>
+                    <option value="3" selected>3 - Высокая</option>
+                    <option value="5">5 - Максимальная (Шейдеры)</option>
+                </select>
+            </div>
+            <button onclick="startGame(false)" style="width:100%; padding: 15px; font-size: 1.1rem;">Новая игра</button>
+            <button onclick="startGame(true)" style="width:100%; margin-top:10px; background: transparent; border: 1px solid #555;">Загрузить</button>
+        </div>
+    </div>
+
+    <!-- ИГРА -->
+    <div id="game-ui">
+        <div class="top-bar glass-panel">
+            <div class="stat">
+                <span class="stat-val money" id="ui-money">$0</span>
+                <span class="stat-label">Баланс</span>
+            </div>
+            <div class="stat">
+                <span class="stat-val date" id="ui-date">М:1 Д:1</span>
+                <span class="stat-label">Дата</span>
+            </div>
+            <div class="stat">
+                <span class="stat-val" id="ui-pop">0</span>
+                <span class="stat-label">Жителей</span>
+            </div>
+            <div class="stat">
+                <span class="stat-val" id="ui-happy" style="color:#e74c3c">50%</span>
+                <span class="stat-label">Счастье</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="save" onclick="saveGame()">💾 Сохранить</button>
+            <button onclick="location.reload()">🚪 Выход</button>
+        </div>
+
+        <div class="build-panel glass-panel">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="setTab('infra')">Инфра</button>
+                <button class="tab-btn" onclick="setTab('res')">Жилье</button>
+                <button class="tab-btn" onclick="setTab('com')">Бизнес</button>
+                <button class="tab-btn" onclick="setTab('ind')">Заводы</button>
+            </div>
+            <div id="build-list" class="build-list"></div>
+        </div>
+    </div>
+
+    <div id="tooltip" class="glass-panel"></div>
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+/* ================= КОНФИГУРАЦИЯ ================= */
+const TILE_SIZE = 48; // Увеличенный размер тайла
+const MAP_SIZE = 64;
+const RES = { IRON: 'iron', GLASS: 'glass', RUBBER: 'rubber', ELECTR: 'electr', CHEM: 'chem', FABRIC: 'fabric', CAR: 'car' };
+
+// Сложности
+const DIFFICULTY = {
+    easy:   { start: 1000000, mul: 1.2 },
+    normal: { start: 500000,  mul: 1.0 },
+    hard:   { start: 250000,  mul: 0.8 }
+};
+
+// Здания (Данные)
+const BUILDINGS = {
+    // ИНФРА
+    road: { type: 'road', name: 'Дорога', cat: 'infra', cost: 50, size: 1, color: '#333', desc: 'Авто-соединение' },
+    delivery: { type: 'delivery', name: 'Логистика', cat: 'infra', cost: 80000, size: 1, color: '#8e44ad', maint: 1500, desc: 'Нужна для автозавода' },
+    police: { type: 'service', name: 'Полиция', cat: 'infra', cost: 60000, size: 1, color: '#2980b9', rad: 5, eff: 10, maint: 1000, desc: '+10 Счастья' },
+    hospital: { type: 'service', name: 'Клиника', cat: 'infra', cost: 100000, size: 1, color: '#e74c3c', rad: 6, eff: 15, maint: 2000, desc: '+15 Счастья' },
+    fire: { type: 'service', name: 'Пожарная', cat: 'infra', cost: 70000, size: 1, color: '#c0392b', rad: 5, eff: 5, maint: 1200, desc: '+5 Счастья' },
+
+    // ЖИЛЬЕ
+    house2: { type: 'res', name: 'Таунхаус', cat: 'res', cost: 15000, size: 1, color: '#27ae60', cap: 8, tax: 400, maint: 100 },
+    houseMulti: { type: 'res', name: 'ЖК "Центр"', cat: 'res', cost: 60000, size: 1, color: '#2ecc71', cap: 40, tax: 1500, maint: 500 },
+    skyscraper: { type: 'res', name: 'Элитная башня', cat: 'res', cost: 200000, size: 1, color: '#1abc9c', cap: 150, tax: 6000, maint: 2000 },
+
+    // БИЗНЕС
+    shop_food: { type: 'com', name: 'Гастроном', cat: 'com', cost: 25000, size: 1, color: '#f1c40f', inc: 3000, maint: 400 },
+    shop_tech: { type: 'com', name: 'Digital Store', cat: 'com', cost: 60000, size: 1, color: '#e67e22', inc: 8000, maint: 1000 },
+    gas: { type: 'com', name: 'АЗС', cat: 'com', cost: 35000, size: 1, color: '#d35400', inc: 4500, maint: 500 },
+
+    // ЗАВОДЫ
+    f_steel: { type: 'ind', name: 'Сталелитейный', cat: 'ind', cost: 40000, size: 1, color: '#7f8c8d', out: {[RES.IRON]:10}, maint: 800, desc: '10 Стали' },
+    f_glass: { type: 'ind', name: 'Стекольный', cat: 'ind', cost: 40000, size: 1, color: '#95a5a6', out: {[RES.GLASS]:5}, maint: 800, desc: '5 Стекла' },
+    f_chip: { type: 'ind', name: 'Микрочипы', cat: 'ind', cost: 90000, size: 1, color: '#34495e', out: {[RES.ELECTR]:10}, maint: 1500, desc: '10 Электр.' },
+    f_rub: { type: 'ind', name: 'Резина-Пром', cat: 'ind', cost: 50000, size: 1, color: '#2c3e50', out: {[RES.RUBBER]:4}, maint: 1000, desc: '4 Резины' },
+    // Гига-фабрика
+    f_auto: { type: 'ind', name: 'Автоконцерн', cat: 'ind', cost: 450000, size: 2, color: '#c0392b', 
+              in: {[RES.IRON]:10, [RES.GLASS]:5, [RES.RUBBER]:4, [RES.ELECTR]:10}, out: {[RES.CAR]:1}, maint: 8000, desc: 'Нужна доставка! Делает авто.' }
+};
+
+const RES_PRICE = { [RES.IRON]:100, [RES.GLASS]:150, [RES.RUBBER]:200, [RES.ELECTR]:300, [RES.CAR]:25000 };
+// Множитель "в 5 раз больше денег"
+const MONEY_MULT = 5;
+
+/* ================= СОСТОЯНИЕ ================= */
+let canvas, ctx;
+let lastTime = 0;
+let gameState = {
+    map: [],
+    buildings: [],
+    money: 0,
+    month: 1,
+    timeAccumulator: 0, // Накопитель времени в мс для месяца
+    cam: { x: 0, y: 0, z: 1 },
+    stats: { pop: 0, happy: 50 },
+    cfg: { diff: 'normal', gfx: 3 }
+};
+let cars = [];
+let selectedBuild = null;
+let currentTab = 'infra';
+let mouse = { x: 0, y: 0, grid: null };
+let isDrag = false;
+
+/* ================= ИНИЦИАЛИЗАЦИЯ ================= */
+function init() {
+    canvas = document.getElementById('gameCanvas');
+    ctx = canvas.getContext('2d', { alpha: false });
+    
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Ввод
+    canvas.addEventListener('mousedown', onDown);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    canvas.addEventListener('wheel', onWheel);
+    canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+    generateMenu();
+    requestAnimationFrame(loop);
+}
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+
+function startGame(load) {
+    if(load) {
+        const data = localStorage.getItem('city_ng_save');
+        if(!data) return alert("Нет сохранений");
+        gameState = JSON.parse(data);
+        // Восстанавливаем прототип карты если нужно, но тут простые объекты
+    } else {
+        const d = document.getElementById('diff-select').value;
+        const g = parseInt(document.getElementById('gfx-select').value);
+        gameState.cfg = { diff: d, gfx: g };
+        gameState.money = DIFFICULTY[d].start;
+        gameState.month = 1;
+        gameState.timeAccumulator = 0;
+        gameState.buildings = [];
+        gameState.map = genMap();
+        // Центр карты
+        gameState.cam.x = (MAP_SIZE*TILE_SIZE)/2 - canvas.width/2;
+        gameState.cam.y = (MAP_SIZE*TILE_SIZE)/2 - canvas.height/2;
+    }
+    
+    document.getElementById('main-menu').style.display = 'none';
+    document.getElementById('game-ui').style.display = 'block';
+    updateUI();
+}
+
+function genMap() {
+    let m = [];
+    let seed = Math.random() * 100;
+    for(let y=0; y<MAP_SIZE; y++) {
+        let r = [];
+        for(let x=0; x<MAP_SIZE; x++) {
+            // Река
+            let riv = (MAP_SIZE/2) + Math.sin((y+seed)*0.1)*6;
+            let isWater = Math.abs(x - riv) < 2.5;
+            r.push({ x, y, type: isWater ? 'water' : 'ground', bid: null });
+        }
+        m.push(r);
+    }
+    return m;
+}
+
+/* ================= ИГРОВОЙ ЦИКЛ ================= */
+function loop(ts) {
+    const dt = ts - lastTime;
+    lastTime = ts;
+
+    if(document.getElementById('game-ui').style.display === 'block') {
+        updateGame(dt);
+        draw(dt);
+    }
+    requestAnimationFrame(loop);
+}
+
+function updateGame(dt) {
+    // Время
+    gameState.timeAccumulator += dt;
+    const MONTH_DURATION = 60000; // 1 минута
+    
+    if(gameState.timeAccumulator >= MONTH_DURATION) {
+        gameState.timeAccumulator -= MONTH_DURATION;
+        processMonth();
+    }
+
+    // Трафик (спавн и движение)
+    updateTraffic(dt);
+    
+    // UI Даты
+    const day = Math.floor((gameState.timeAccumulator / MONTH_DURATION) * 30) + 1;
+    document.getElementById('ui-date').innerText = `М:${gameState.month} Д:${day}`;
+}
+
+function processMonth() {
+    gameState.month++;
+    let income = 0, expense = 0, pop = 0, happySum = 0, houses = 0;
+    
+    // Пул ресурсов на месяц
+    let pool = {}; 
+    for(let k in RES) pool[RES[k]] = 0;
+
+    const hasLogistics = gameState.buildings.some(b => BUILDINGS[b.key].type === 'delivery');
+    const services = gameState.buildings.filter(b => BUILDINGS[b.key].type === 'service');
+
+    // 1. Производство простых заводов
+    gameState.buildings.forEach(b => {
+        const data = BUILDINGS[b.key];
+        if(data.type === 'ind' && data.out && !data.in) {
+            for(let r in data.out) pool[r] += data.out[r];
+        }
+    });
+
+    // 2. Сложные заводы (Авто)
+    gameState.buildings.forEach(b => {
+        const data = BUILDINGS[b.key];
+        if(data.type === 'ind' && data.in && hasLogistics) {
+            let can = true;
+            for(let r in data.in) if(pool[r] < data.in[r]) can = false;
+            if(can) {
+                for(let r in data.in) pool[r] -= data.in[r];
+                for(let r in data.out) pool[r] += data.out[r];
+            }
+        }
+    });
+
+    // 3. Экономика зданий
+    gameState.buildings.forEach(b => {
+        const data = BUILDINGS[b.key];
+        expense += (data.maint || 0);
+
+        if(data.type === 'com') income += (data.inc || 0) * MONEY_MULT;
+        
+        if(data.type === 'res') {
+            // Расчет счастья
+            let h = 50;
+            services.forEach(s => {
+                const sd = BUILDINGS[s.key];
+                const dst = Math.hypot(s.x - b.x, s.y - b.y);
+                if(dst <= sd.rad) h += sd.eff;
+            });
+            if(h > 100) h = 100;
+            
+            income += (data.tax * (h/100)) * MONEY_MULT;
+            pop += data.cap;
+            happySum += h;
+            houses++;
+        }
+    });
+
+    // 4. Продажа ресурсов
+    for(let r in pool) {
+        if(pool[r] > 0) income += pool[r] * RES_PRICE[r] * MONEY_MULT;
+    }
+
+    // Модификатор сложности
+    const diff = DIFFICULTY[gameState.cfg.diff].mul;
+    income *= diff;
+
+    gameState.money += (income - expense);
+    gameState.stats.pop = pop;
+    gameState.stats.happy = houses ? Math.floor(happySum/houses) : 0;
+    
+    updateUI();
+    showFloater(income - expense);
+}
+
+/* ================= ТРАФИК ================= */
+class Car {
+    constructor(gx, gy) {
+        this.x = gx; this.y = gy;
+        this.tx = gx; this.ty = gy; // Target
+        this.speed = 0.04; // Скорость тайлов/кадр (при 60fps ~ 2.4 тайла/сек)
+        this.dir = 0; // 0:up, 1:right, 2:down, 3:left
+        this.color = ['#e74c3c', '#3498db', '#f1c40f', '#ecf0f1'][Math.floor(Math.random()*4)];
+    }
+}
+
+function updateTraffic(dt) {
+    // Спавн
+    if(gameState.buildings.length > 2 && cars.length < gameState.buildings.length && Math.random() < 0.02) {
+        // Найти случайную дорогу
+        const roads = gameState.buildings.filter(b => BUILDINGS[b.key].type === 'road');
+        if(roads.length > 0) {
+            const r = roads[Math.floor(Math.random() * roads.length)];
+            // Проверка, нет ли там машины
+            if(!cars.some(c => Math.abs(c.x - r.x) < 0.5 && Math.abs(c.y - r.y) < 0.5)) {
+                cars.push(new Car(r.x, r.y));
+            }
+        }
+    }
+
+    // Движение
+    for(let i = cars.length - 1; i >= 0; i--) {
+        let c = cars[i];
+        
+        // Движение к цели (интерполяция)
+        const dx = c.tx - c.x;
+        const dy = c.ty - c.y;
+        const dist = Math.hypot(dx, dy);
+
+        if(dist > c.speed) {
+            c.x += (dx / dist) * c.speed;
+            c.y += (dy / dist) * c.speed;
+        } else {
+            // Доехал до центра тайла, ищем следующий
+            c.x = c.tx; c.y = c.ty;
+            
+            // Соседи
+            const neighbors = [];
+            const check = (nx, ny, dir) => {
+                if(nx>=0 && nx<MAP_SIZE && ny>=0 && ny<MAP_SIZE) {
+                   const cell = gameState.map[ny][nx];
+                   if(cell.bid) {
+                       const b = gameState.buildings.find(bb => bb.id === cell.bid);
+                       if(b && BUILDINGS[b.key].type === 'road') return true;
+                   }
+                }
+                return false;
+            };
+
+            // 0:up, 1:right, 2:down, 3:left
+            // Не едем назад (opposite dir), если есть выбор
+            const opp = (c.dir + 2) % 4;
+
+            if(check(c.x, c.y-1)) neighbors.push(0);
+            if(check(c.x+1, c.y)) neighbors.push(1);
+            if(check(c.x, c.y+1)) neighbors.push(2);
+            if(check(c.x-1, c.y)) neighbors.push(3);
+
+            if(neighbors.length > 0) {
+                // Пытаемся исключить разворот
+                let valid = neighbors.filter(d => d !== opp);
+                if(valid.length === 0) valid = neighbors; // Тупик
+                
+                c.dir = valid[Math.floor(Math.random() * valid.length)];
+                if(c.dir === 0) c.ty -= 1;
+                if(c.dir === 1) c.tx += 1;
+                if(c.dir === 2) c.ty += 1;
+                if(c.dir === 3) c.tx -= 1;
+            } else {
+                // Машина застряла (удалили дорогу)
+                cars.splice(i, 1);
+            }
+        }
+    }
+}
+
+/* ================= ОТРИСОВКА ================= */
+function draw(dt) {
+    const { cam, map, cfg } = gameState;
+    const Z = cam.z;
+    const GFX = cfg.gfx;
+
+    // Фон
+    ctx.fillStyle = '#1e272e'; // Темный фон "пустоты"
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Оптимизация: границы видимости
+    const colStart = Math.floor(cam.x / (TILE_SIZE*Z));
+    const colEnd = colStart + Math.ceil(canvas.width / (TILE_SIZE*Z)) + 1;
+    const rowStart = Math.floor(cam.y / (TILE_SIZE*Z));
+    const rowEnd = rowStart + Math.ceil(canvas.height / (TILE_SIZE*Z)) + 1;
+
+    // 1. Земля и Вода
+    for(let y = Math.max(0, rowStart); y < Math.min(MAP_SIZE, rowEnd); y++) {
+        for(let x = Math.max(0, colStart); x < Math.min(MAP_SIZE, colEnd); x++) {
+            const cell = map[y][x];
+            const sx = Math.floor(x*TILE_SIZE*Z - cam.x);
+            const sy = Math.floor(y*TILE_SIZE*Z - cam.y);
+            const size = Math.ceil(TILE_SIZE*Z);
+
+            if(cell.type === 'water') {
+                ctx.fillStyle = '#3498db';
+            } else {
+                ctx.fillStyle = (GFX >= 3) ? '#2c3e50' : '#34495e'; // Темная земля
+                // Легкая вариация цвета для GFX 3+
+                if(GFX>=3 && (x+y)%3===0) ctx.fillStyle = '#2d4053'; 
+            }
+            ctx.fillRect(sx, sy, size, size);
+            
+            // Сетка
+            if(GFX >= 3) {
+                ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(sx, sy, size, size);
+            }
+        }
+    }
+
+    // 2. Здания и Дороги
+    // Отфильтруем видимые здания для отрисовки
+    const visibleBuildings = gameState.buildings.filter(b => 
+        b.x >= colStart-2 && b.x <= colEnd && b.y >= rowStart-2 && b.y <= rowEnd
+    );
+
+    visibleBuildings.forEach(b => {
+        const data = BUILDINGS[b.key];
+        const sx = Math.floor(b.x*TILE_SIZE*Z - cam.x);
+        const sy = Math.floor(b.y*TILE_SIZE*Z - cam.y);
+        const size = Math.ceil(TILE_SIZE*Z * data.size);
+
+        // Тень (GFX 3+)
+        if(GFX >= 3 && data.type !== 'road') {
+            ctx.fillStyle = 'rgba(0,0,0,0.4)';
+            ctx.fillRect(sx + size*0.1, sy + size*0.1, size, size); // Сдвиг тени
+        }
+
+        if(data.type === 'road') {
+            drawSmartRoad(ctx, b.x, b.y, sx, sy, Math.ceil(TILE_SIZE*Z));
+        } else {
+            // Основа здания
+            ctx.fillStyle = data.color;
+            ctx.fillRect(sx, sy, size, size);
+
+            // Детализация
+            if(GFX >= 3) {
+                // "Объем" - светлая грань сверху
+                ctx.fillStyle = 'rgba(255,255,255,0.1)';
+                ctx.fillRect(sx, sy, size, size*0.1);
+                
+                if(data.cat === 'res' || data.cat === 'com') {
+                    // Окна
+                    ctx.fillStyle = (GFX===5) ? '#f1c40f' : '#bdc3c7'; // Свечение окон на макс графике
+                    const wSize = size/4;
+                    ctx.fillRect(sx+wSize, sy+wSize, wSize, wSize);
+                    ctx.fillRect(sx+wSize*2.5, sy+wSize, wSize, wSize);
+                    
+                    if(GFX === 5) {
+                        ctx.shadowColor = '#f1c40f';
+                        ctx.shadowBlur = 10;
+                        ctx.fillRect(sx+wSize, sy+wSize, wSize, wSize); // Повтор для свечения
+                        ctx.shadowBlur = 0;
+                    }
+                }
+            }
+            
+            // Подпись
+            if(data.size > 1 && Z > 0.8) {
+                ctx.fillStyle = 'white';
+                ctx.font = `${10*Z}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.fillText(data.name.slice(0,6), sx+size/2, sy+size/2);
+            }
+        }
+    });
+
+    // 3. Машины
+    ctx.fillStyle = '#fff';
+    cars.forEach(c => {
+        // Проверка видимости
+        if(c.x < colStart || c.x > colEnd || c.y < rowStart || c.y > rowEnd) return;
+        
+        const sx = (c.x * TILE_SIZE * Z) - cam.x + (TILE_SIZE*Z*0.35); // Центрирование на полосе
+        const sy = (c.y * TILE_SIZE * Z) - cam.y + (TILE_SIZE*Z*0.35);
+        const cSize = TILE_SIZE * Z * 0.3;
+
+        ctx.fillStyle = c.color;
+        
+        // Поворот машины (просто смещение для прямоугольника)
+        ctx.fillRect(sx, sy, cSize, cSize);
+        
+        // Фары (GFX 5)
+        if(GFX === 5) {
+            ctx.fillStyle = 'rgba(255, 255, 200, 0.6)';
+            // Упрощенно рисуем "свет" во все стороны, т.к. поворот сложнее считать
+            ctx.beginPath();
+            ctx.arc(sx+cSize/2, sy+cSize/2, cSize, 0, Math.PI*2);
+            ctx.fill();
+        }
+    });
+
+    // 4. Курсор строительства
+    if(selectedBuild && mouse.grid) {
+        const {x, y} = mouse.grid;
+        const bData = BUILDINGS[selectedBuild];
+        const sx = Math.floor(x*TILE_SIZE*Z - cam.x);
+        const sy = Math.floor(y*TILE_SIZE*Z - cam.y);
+        const size = Math.ceil(TILE_SIZE*Z * bData.size);
+
+        const can = canBuild(x, y, bData.size);
+        
+        ctx.fillStyle = can ? 'rgba(46, 204, 113, 0.5)' : 'rgba(231, 76, 60, 0.5)';
+        ctx.fillRect(sx, sy, size, size);
+        
+        if(bData.rad) {
+            ctx.beginPath();
+            ctx.arc(sx+size/2, sy+size/2, bData.rad*TILE_SIZE*Z, 0, Math.PI*2);
+            ctx.fillStyle = 'rgba(52, 152, 219, 0.2)';
+            ctx.fill();
+            ctx.strokeStyle = '#3498db';
+            ctx.stroke();
+        }
+    }
+
+    // 5. Пост-процессинг (GFX 5)
+    if(GFX === 5) {
+        // Виньетка
+        const grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, canvas.height/2, canvas.width/2, canvas.height/2, canvas.height);
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(1, 'rgba(0,0,0,0.6)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0,0,canvas.width, canvas.height);
+        
+        // Цветокоррекция (overlay)
+        ctx.globalCompositeOperation = 'overlay';
+        ctx.fillStyle = 'rgba(52, 152, 219, 0.1)'; // Холодный оттенок
+        ctx.fillRect(0,0,canvas.width, canvas.height);
+        ctx.globalCompositeOperation = 'source-over';
+    }
+}
+
+// Умная отрисовка дорог
+function drawSmartRoad(ctx, x, y, sx, sy, size) {
+    const isRoad = (nx, ny) => {
+        if(nx<0||ny<0||nx>=MAP_SIZE||ny>=MAP_SIZE) return false;
+        const c = gameState.map[ny][nx];
+        if(!c.bid) return false;
+        const b = gameState.buildings.find(bb => bb.id === c.bid);
+        return b && BUILDINGS[b.key].type === 'road';
+    };
+
+    const n = isRoad(x, y-1);
+    const s = isRoad(x, y+1);
+    const e = isRoad(x+1, y);
+    const w = isRoad(x-1, y);
+
+    ctx.fillStyle = '#444'; // Асфальт
+    ctx.fillRect(sx, sy, size, size);
+
+    // Разметка (Белая)
+    ctx.fillStyle = '#ecf0f1';
+    const half = size/2;
+    const roadW = size*0.2; // Ширина полосы
+    const center = size/2 - roadW/2;
+
+    // Центр перекрестка
+    // ctx.fillRect(sx + center, sy + center, roadW, roadW);
+
+    // Соединения
+    if(n) ctx.fillRect(sx + size*0.45, sy, size*0.1, size*0.6);
+    if(s) ctx.fillRect(sx + size*0.45, sy + size*0.4, size*0.1, size*0.6);
+    if(w) ctx.fillRect(sx, sy + size*0.45, size*0.6, size*0.1);
+    if(e) ctx.fillRect(sx + size*0.4, sy + size*0.45, size*0.6, size*0.1);
+}
+
+/* ================= ЛОГИКА ВВОДА ================= */
+function onMove(e) {
+    // Движение камеры
+    if(isDrag) {
+        gameState.cam.x -= e.movementX;
+        gameState.cam.y -= e.movementY;
+    }
+    
+    // Расчет клетки под мышью
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left + gameState.cam.x;
+    const my = e.clientY - rect.top + gameState.cam.y;
+    const gx = Math.floor(mx / (TILE_SIZE * gameState.cam.z));
+    const gy = Math.floor(my / (TILE_SIZE * gameState.cam.z));
+
+    if(gx >= 0 && gx < MAP_SIZE && gy >= 0 && gy < MAP_SIZE) {
+        mouse.grid = { x: gx, y: gy };
+        
+        // Тултип
+        const cell = gameState.map[gy][gx];
+        const tip = document.getElementById('tooltip');
+        if(!isDrag && !selectedBuild && cell.bid) {
+            const b = gameState.buildings.find(bb => bb.id === cell.bid);
+            const data = BUILDINGS[b.key];
+            tip.style.display = 'block';
+            tip.style.left = (e.clientX + 15) + 'px';
+            tip.style.top = (e.clientY + 15) + 'px';
+            tip.innerHTML = `<strong style="color:var(--accent)">${data.name}</strong><br>
+                             ${data.desc || ''}<br>
+                             <span style="color:#aaa">Обсл: $${data.maint||0}</span>`;
+        } else {
+            tip.style.display = 'none';
+        }
+    } else {
+        mouse.grid = null;
+        document.getElementById('tooltip').style.display = 'none';
+    }
+}
+
+function onDown(e) {
+    if(e.button === 0) { // ЛКМ
+        if(selectedBuild && mouse.grid) {
+            const {x, y} = mouse.grid;
+            const bData = BUILDINGS[selectedBuild];
+            if(canBuild(x, y, bData.size)) {
+                build(x, y, selectedBuild);
+            }
+        } else {
+            isDrag = true;
+            canvas.style.cursor = 'grabbing';
+        }
+    } else if(e.button === 2) { // ПКМ - сброс
+        selectedBuild = null;
+        generateMenu();
+        document.getElementById('tooltip').style.display = 'none';
+    }
+}
+
+function onUp() { isDrag = false; canvas.style.cursor = 'default'; }
+
+function onWheel(e) {
+    const s = 0.1;
+    gameState.cam.z += (e.deltaY < 0 ? s : -s);
+    gameState.cam.z = Math.max(0.5, Math.min(3, gameState.cam.z));
+}
+
+/* ================= ИНСТРУМЕНТЫ ================= */
+function canBuild(x, y, size) {
+    if(x+size > MAP_SIZE || y+size > MAP_SIZE) return false;
+    for(let dy=0; dy<size; dy++) {
+        for(let dx=0; dx<size; dx++) {
+            const c = gameState.map[y+dy][x+dx];
+            if(c.type === 'water' || c.bid !== null) return false;
+        }
+    }
+    return true;
+}
+
+function build(x, y, key) {
+    const data = BUILDINGS[key];
+    const diff = DIFFICULTY[gameState.cfg.diff].mul;
+    const cost = data.cost * diff; // Цена зависит от сложности, но не умножается на 5
+    
+    if(gameState.money >= cost) {
+        gameState.money -= cost;
+        const id = Date.now() + Math.random();
+        gameState.buildings.push({ id, x, y, key });
+        
+        for(let dy=0; dy<data.size; dy++) {
+            for(let dx=0; dx<data.size; dx++) {
+                gameState.map[y+dy][x+dx].bid = id;
+            }
+        }
+        updateUI();
+        showFloater(-cost, true);
+    } else {
+        alert("Нет денег!");
+    }
+}
+
+function showFloater(amount, isBuild) {
+    // Можно добавить визуальный эффект всплывающих цифр, но для простоты опустим
+    // или выведем в консоль
+    // console.log(amount > 0 ? `+${amount}` : amount);
+}
+
+/* ================= UI ФУНКЦИИ ================= */
+function setTab(t) {
+    currentTab = t;
+    generateMenu();
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.tab-btn[onclick="setTab('${t}')"]`).classList.add('active');
+}
+
+function generateMenu() {
+    const list = document.getElementById('build-list');
+    list.innerHTML = '';
+    const diff = DIFFICULTY[gameState.cfg.diff || 'normal'].mul;
+
+    for(let k in BUILDINGS) {
+        const b = BUILDINGS[k];
+        if(b.cat !== currentTab) continue;
+
+        const el = document.createElement('div');
+        el.className = `b-card ${selectedBuild===k ? 'selected' : ''}`;
+        el.innerHTML = `
+            <div class="b-name">${b.name}</div>
+            <div class="b-cost">$${(b.cost * diff).toLocaleString()}</div>
+            <div class="b-desc">${b.desc || (b.in ? 'Сложное пр-во' : '')}</div>
+        `;
+        el.onclick = () => { selectedBuild = k; generateMenu(); };
+        list.appendChild(el);
+    }
+}
+
+function updateUI() {
+    const els = {
+        money: document.getElementById('ui-money'),
+        pop: document.getElementById('ui-pop'),
+        happy: document.getElementById('ui-happy')
+    };
+    els.money.innerText = `$${Math.floor(gameState.money).toLocaleString()}`;
+    els.pop.innerText = gameState.stats.pop;
+    els.happy.innerText = `${gameState.stats.happy}%`;
+    els.happy.style.color = gameState.stats.happy > 70 ? '#2ecc71' : (gameState.stats.happy < 40 ? '#e74c3c' : '#f1c40f');
+}
+
+function saveGame() {
+    localStorage.setItem('city_ng_save', JSON.stringify(gameState));
+    alert('Игра сохранена!');
+}
+
+init();
+</script>
+</body>
+</html>
+```

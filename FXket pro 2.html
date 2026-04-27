@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FXkey pro 2</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%230088cc'/%3E%3Cstop offset='100%25' stop-color='%2300d4aa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' rx='20' width='100' height='100'/%3E%3Ctext x='50' y='42' font-size='28' font-weight='bold' text-anchor='middle' fill='white' font-family='Arial'%3EFX%3C/text%3E%3Ctext x='50' y='72' font-size='18' font-weight='bold' text-anchor='middle' fill='white' font-family='Arial'%3Epro 2%3C/text%3E%3C/svg%3E">
+  <style>
+    /* ============ ТЕМЫ И ДИЗАЙНЫ ============ */
+    :root {
+      --bg: #ffffff;
+      --card: #f5f5f5;
+      --text: #111;
+      --subtext: #555;
+      --accent: #0088cc;
+      --accent2: #00d4aa;
+      --danger: #e53935;
+      --success: #4caf50;
+      --shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    body.theme-dark {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --text: #f5f5f5;
+      --subtext: #aaaaaa;
+      --accent: #00a886;
+      --shadow: 0 2px 10px rgba(0,0,0,0.35);
+    }
+    body.design-telegram { --accent:#0088cc; --card:#ffffff; --bg:#e8f4fc; }
+    body.design-classic { --accent:#6366f1; }
+    body.design-neon { --accent:#a855f7; --card:#0f172a; --bg:#0b1220; --text:#e0e7ff; --subtext:#94a3b8; }
+    body.design-minimal { --accent:#000; --card:#fff; --bg:#fafafa; --text:#000; --subtext:#333; }
+    body.design-natural { --accent:#2dd4bf; --card:#e0f2f1; --bg:#e8f5e9; --text:#064e3b; --subtext:#0f766e; }
+    body.design-retro { --accent:#c08457; --card:#f5e9da; --bg:#f0e4d7; --text:#5c4033; --subtext:#8b6b61; font-family:"Georgia",serif; }
+    
+    /* ============ ТОКСИЧНЫЙ ДИЗАЙН ============ */
+    body.design-toxic { 
+      --accent:#00ff41; 
+      --accent2:#ff00ff;
+      --card:#0d0d0d; 
+      --bg:#000000; 
+      --text:#00ff41; 
+      --subtext:#00cc33;
+      --danger:#ff0040;
+    }
+    
+    body.design-toxic .btn {
+      background: linear-gradient(90deg, #00ff41, #00ccff, #ff00ff, #ff0040, #00ff41);
+      background-size: 400% 100%;
+      animation: toxicGlow 3s ease infinite;
+      border: 2px solid #00ff41;
+      text-shadow: 0 0 10px #00ff41;
+      box-shadow: 0 0 20px rgba(0,255,65,0.5), inset 0 0 20px rgba(0,255,65,0.1);
+    }
+    
+    body.design-toxic .btn:hover {
+      box-shadow: 0 0 40px rgba(0,255,65,0.8), 0 0 60px rgba(255,0,255,0.4), inset 0 0 30px rgba(0,255,65,0.2);
+      transform: scale(1.05);
+    }
+    
+    body.design-toxic .btn-outline {
+      background: transparent;
+      border: 2px solid #00ff41;
+      color: #00ff41;
+      animation: toxicBorder 2s ease infinite;
+    }
+    
+    body.design-toxic .btn-danger {
+      background: linear-gradient(90deg, #ff0040, #ff00ff, #ff0040);
+      background-size: 200% 100%;
+      animation: toxicGlow 2s ease infinite;
+      border-color: #ff0040;
+      text-shadow: 0 0 10px #ff0040;
+      box-shadow: 0 0 20px rgba(255,0,64,0.5);
+    }
+    
+    body.design-toxic .card {
+      border: 1px solid #00ff41;
+      box-shadow: 0 0 15px rgba(0,255,65,0.3), inset 0 0 10px rgba(0,255,65,0.05);
+    }
+    
+    body.design-toxic .input {
+      border: 2px solid #00ff41;
+      background: rgba(0,255,65,0.05);
+      color: #00ff41;
+      box-shadow: 0 0 10px rgba(0,255,65,0.2);
+    }
+    
+    body.design-toxic .input:focus {
+      box-shadow: 0 0 20px rgba(0,255,65,0.5);
+    }
+    
+    body.design-toxic .message.from-me {
+      background: linear-gradient(135deg, #00ff41, #00ccff);
+      box-shadow: 0 0 15px rgba(0,255,65,0.4);
+    }
+    
+    body.design-toxic .message.from-them {
+      border: 1px solid #00ff41;
+      box-shadow: 0 0 10px rgba(0,255,65,0.2);
+    }
+    
+    body.design-toxic .click-button {
+      background: linear-gradient(145deg, #00ff41, #00ccff, #ff00ff);
+      background-size: 200% 200%;
+      animation: toxicPulse 2s ease infinite;
+      box-shadow: 0 0 50px rgba(0,255,65,0.6), 0 0 100px rgba(255,0,255,0.3);
+      border: 3px solid #00ff41;
+    }
+    
+    body.design-toxic .roulette-wheel {
+      border-color: #00ff41;
+      box-shadow: 0 0 50px rgba(0,255,65,0.5), 0 0 100px rgba(255,0,255,0.3);
+    }
+    
+    @keyframes toxicGlow {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    
+    @keyframes toxicBorder {
+      0%, 100% { border-color: #00ff41; box-shadow: 0 0 10px rgba(0,255,65,0.5); }
+      50% { border-color: #ff00ff; box-shadow: 0 0 20px rgba(255,0,255,0.5); }
+    }
+    
+    @keyframes toxicPulse {
+      0%, 100% { background-position: 0% 50%; box-shadow: 0 0 50px rgba(0,255,65,0.6); }
+      50% { background-position: 100% 100%; box-shadow: 0 0 80px rgba(255,0,255,0.6); }
+    }
+
+    * { box-sizing: border-box; }
+    body { background:var(--bg); color:var(--text); font-family:'Segoe UI',Roboto,sans-serif; margin:0; transition:all .3s; }
+    
+    /* ============ КОМПОНЕНТЫ ============ */
+    .card { background:var(--card); border-radius:12px; box-shadow:var(--shadow); }
+    .btn { background:linear-gradient(135deg,var(--accent),var(--accent2,var(--accent))); color:#fff; border-radius:10px; padding:10px 16px; font-weight:600; cursor:pointer; border:none; transition:all .2s; }
+    .btn:hover:not(:disabled) { transform:scale(1.03); filter:brightness(1.1); }
+    .btn:disabled { opacity:.5; cursor:not-allowed; }
+    .btn-outline { background:transparent; border:2px solid var(--accent); color:var(--accent); }
+    .btn-danger { background:var(--danger); }
+    .btn-success { background:var(--success); }
+    .input { background:var(--card); color:var(--text); border:1px solid rgba(128,128,128,0.2); border-radius:10px; padding:12px; width:100%; transition:all .2s; }
+    .input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,136,204,0.2); }
+    
+    /* Бейджи */
+    .badge { background:var(--danger); color:#fff; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; }
+    
+    /* Сообщения */
+    .message { border-radius:18px; padding:10px 14px; margin:4px 0; max-width:75%; word-wrap:break-word; }
+    .from-me { background:linear-gradient(135deg,var(--accent),#42c6ff); color:#fff; margin-left:auto; border-bottom-right-radius:4px; }
+    .from-them { background:var(--card); border-bottom-left-radius:4px; }
+    .gift-msg { background:linear-gradient(135deg,#ffd700,#ff6b6b); text-align:center; color:#fff; }
+    
+    /* Модалки */
+    .modal { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; padding:16px; z-index:100; backdrop-filter:blur(4px); }
+    .modal.active { display:flex; }
+    .modal-content { max-height:90vh; overflow:auto; max-width:500px; width:100%; animation:modalIn .3s; }
+    @keyframes modalIn { from { transform:scale(0.9); opacity:0; } to { transform:scale(1); opacity:1; } }
+    
+    /* Кликер */
+    .click-button { 
+      width:220px; height:220px; border-radius:50%; 
+      background:linear-gradient(145deg, var(--accent), #00d4aa); 
+      color:#fff; font-size:28px; font-weight:700; 
+      display:flex; flex-direction:column; align-items:center; justify-content:center; 
+      margin:30px auto; box-shadow:0 15px 50px rgba(0,136,204,0.4);
+      cursor:pointer; border:none; transition:all .15s; user-select:none;
+    }
+    .click-button:hover { transform:scale(1.08); box-shadow:0 20px 60px rgba(0,136,204,0.5); }
+    .click-button:active { transform:scale(0.92); }
+    .click-button span { font-size:48px; }
+    
+    /* Рулетка */
+    .roulette-wheel {
+      width:300px; height:300px; border-radius:50%;
+      border:10px solid var(--accent); position:relative;
+      margin:20px auto; box-shadow:0 0 40px rgba(0,136,204,0.5), inset 0 0 30px rgba(0,0,0,0.3);
+      overflow:hidden;
+    }
+    .roulette-inner { width:100%; height:100%; position:relative; transition:transform 5s cubic-bezier(0.17,0.67,0.12,0.99); }
+    .roulette-segment {
+      position:absolute; width:50%; height:50%; left:50%; top:50%;
+      transform-origin:0 0; display:flex; align-items:center; justify-content:center;
+      clip-path:polygon(0 0, 100% 0, 0 100%);
+    }
+    .roulette-segment span { transform:rotate(-60deg) translateX(30px); font-weight:bold; font-size:18px; color:#fff; text-shadow:1px 1px 2px rgba(0,0,0,0.5); }
+    .roulette-pointer {
+      position:absolute; top:-5px; left:50%; transform:translateX(-50%);
+      width:0; height:0; border-left:20px solid transparent; border-right:20px solid transparent;
+      border-top:35px solid var(--danger); z-index:10; filter:drop-shadow(0 3px 6px rgba(0,0,0,0.4));
+    }
+    .roulette-center {
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      width:60px; height:60px; border-radius:50%; background:linear-gradient(135deg,#fff,#ddd);
+      box-shadow:0 4px 15px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center;
+      font-size:24px; z-index:5;
+    }
+    
+    /* Звонок */
+    .call-overlay { position:fixed; inset:0; background:linear-gradient(135deg,#1a1a2e,#16213e); display:none; align-items:center; justify-content:center; z-index:200; }
+    .call-overlay.active { display:flex; }
+    .call-avatar { width:120px; height:120px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:60px; margin:0 auto 20px; animation:pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { box-shadow:0 0 0 0 rgba(0,136,204,0.5); } 50% { box-shadow:0 0 0 30px rgba(0,136,204,0); } }
+    
+    /* Адаптивность */
+    .layout { display:grid; grid-template-columns:320px 1fr; min-height:100vh; }
+    @media (max-width:768px) { .layout { grid-template-columns:1fr; } .sidebar { display:none; } .sidebar.mobile-open { display:flex; position:fixed; inset:0; z-index:50; } }
+  </style>
+</head>
+<body class="theme-light design-telegram">
+<div id="app"></div>
+
+<script>
+// ============ ХРАНЕНИЕ ДАННЫХ ============
+const DB = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem(k)) || d; } catch { return d; } },
+  set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+};
+
+// ============ КАТАЛОГ ПОДАРКОВ ============
+const GIFTS = [
+  {id:'g1',name:'Роза',price:30,icon:'🌹',desc:'Символ любви'},
+  {id:'g2',name:'Сердце',price:50,icon:'❤️',desc:'От всего сердца'},
+  {id:'g3',name:'Звезда',price:100,icon:'⭐',desc:'Ты звезда!'},
+  {id:'g4',name:'Корона',price:200,icon:'👑',desc:'Королевский подарок'},
+  {id:'g5',name:'Трофей',price:500,icon:'🏆',desc:'Знак уважения'},
+  {id:'g6',name:'Кристалл',price:800,icon:'💎',desc:'Драгоценность'},
+  {id:'g7',name:'Огонь',price:1000,icon:'🔥',desc:'Горячий подарок'},
+  {id:'g8',name:'Крылья',price:1500,icon:'🪽',desc:'Свобода полёта'},
+  {id:'g9',name:'Единорог',price:2000,icon:'🦄',desc:'Волшебство'},
+  {id:'g10',name:'Радуга',price:2500,icon:'🌈',desc:'Все цвета'},
+  {id:'g11',name:'Ракета',price:3000,icon:'🚀',desc:'До звёзд!'},
+  {id:'g12',name:'Торт',price:500,icon:'🎂',desc:'Праздник'},
+  {id:'g13',name:'Шампанское',price:1200,icon:'🍾',desc:'За победу!'},
+  {id:'g14',name:'Бриллиант',price:5000,icon:'💠',desc:'Вечность'},
+  {id:'g15',name:'Дракон',price:8000,icon:'🐉',desc:'Мощь и сила'},
+  {id:'g16',name:'Замок',price:10000,icon:'🏰',desc:'Твоя крепость'},
+  {id:'g17',name:'Яхта',price:15000,icon:'🛥️',desc:'Роскошь морей'},
+  {id:'g18',name:'Самолёт',price:20000,icon:'✈️',desc:'Первый класс'},
+  {id:'g19',name:'Космос',price:25000,icon:'🌌',desc:'Бесконечность'},
+  {id:'g20',name:'Планета',price:30000,icon:'🪐',desc:'Целый мир'}
+];
+
+// ============ СОСТОЯНИЕ ============
+let S = {
+  users: DB.get('users', []),
+  chats: DB.get('chats', []),
+  friends: DB.get('friends', {}),
+  friendRequests: DB.get('friendRequests', {}), // {userId: [{from, time}]}
+  groups: DB.get('groups', []),
+  gems: DB.get('gems', {}),
+  inventory: DB.get('inventory', {}),
+  settings: DB.get('settings', {theme:'light', design:'telegram'}),
+  me: null,
+  tab: 'chats',
+  chat: null,
+  bet: 10
+};
+
+// Боты
+const BOTS = [
+  {id:'bot-clicker', name:'💰 Кликер', avatar:'⚡', type:'clicker'},
+  {id:'bot-roulette', name:'🎰 Рулетка', avatar:'🎡', type:'roulette'},
+  {id:'bot-shop', name:'🛍️ Магазин', avatar:'🏪', type:'shop'},
+  {id:'bot-support', name:'🛟 Поддержка', avatar:'🛟', type:'support'}
+];
+
+function save() {
+  DB.set('users', S.users);
+  DB.set('chats', S.chats);
+  DB.set('friends', S.friends);
+  DB.set('friendRequests', S.friendRequests);
+  DB.set('groups', S.groups);
+  DB.set('gems', S.gems);
+  DB.set('inventory', S.inventory);
+  DB.set('settings', S.settings);
+}
+setInterval(save, 5000);
+
+// ============ УТИЛИТЫ ============
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const el = (t, c, h) => { const e = document.createElement(t); if(c) e.className = c; if(h) e.innerHTML = h; return e; };
+const time = t => new Date(t).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+
+// ============ АВТОРИЗАЦИЯ ============
+function initBotChats(uid) {
+  BOTS.forEach(bot => {
+    const cid = `${bot.id}-${uid}`;
+    if (!S.chats.find(c => c.id === cid)) {
+      S.chats.push({
+        id: cid, name: bot.name, avatar: bot.avatar,
+        members: [uid, bot.id], isBot: true, botType: bot.type, messages: []
+      });
+    }
+  });
+}
+
+function login(email, pass) {
+  const user = S.users.find(u => u.email === email && u.password === pass);
+  if (!user) return alert('Неверные данные!');
+  S.me = user;
+  if (S.gems[user.id] === undefined) S.gems[user.id] = 0;
+  if (!S.inventory[user.id]) S.inventory[user.id] = [];
+  if (!S.friends[user.id]) S.friends[user.id] = [];
+  if (!S.friendRequests[user.id]) S.friendRequests[user.id] = [];
+  initBotChats(user.id);
+  save();
+  render();
+}
+
+function register(data) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) return alert('Неверный email');
+  if (data.password.length < 8) return alert('Пароль мин. 8 символов');
+  if (S.users.some(u => u.email === data.email)) return alert('Email занят');
+  const user = { id: 'u' + Date.now(), ...data };
+  S.users.push(user);
+  S.gems[user.id] = 0;
+  S.inventory[user.id] = [];
+  S.friends[user.id] = [];
+  S.friendRequests[user.id] = [];
+  save();
+  login(data.email, data.password);
+}
+
+function logout() {
+  S.me = null;
+  S.chat = null;
+  render();
+}
+
+// ============ ЗАЯВКИ В ДРУЗЬЯ ============
+function sendFriendRequest(userId) {
+  if (!S.friendRequests[userId]) S.friendRequests[userId] = [];
+  
+  // Проверяем, не отправлена ли уже заявка
+  if (S.friendRequests[userId].some(r => r.from === S.me.id)) {
+    return alert('Заявка уже отправлена!');
+  }
+  
+  // Проверяем, не друзья ли уже
+  if ((S.friends[S.me.id] || []).includes(userId)) {
+    return alert('Вы уже друзья!');
+  }
+  
+  S.friendRequests[userId].push({
+    from: S.me.id,
+    time: Date.now()
+  });
+  
+  save();
+  alert('✅ Заявка отправлена!');
+  closeModal('friendModal');
+  render();
+}
+
+function acceptFriendRequest(fromUserId) {
+  // Добавляем в друзья обоим
+  if (!S.friends[S.me.id]) S.friends[S.me.id] = [];
+  if (!S.friends[fromUserId]) S.friends[fromUserId] = [];
+  
+  if (!S.friends[S.me.id].includes(fromUserId)) {
+    S.friends[S.me.id].push(fromUserId);
+  }
+  if (!S.friends[fromUserId].includes(S.me.id)) {
+    S.friends[fromUserId].push(S.me.id);
+  }
+  
+  // Удаляем заявку
+  S.friendRequests[S.me.id] = (S.friendRequests[S.me.id] || []).filter(r => r.from !== fromUserId);
+  
+  // Создаём чат
+  const user = S.users.find(u => u.id === fromUserId);
+  if (user) getOrCreateDM(user);
+  
+  save();
+  render();
+}
+
+function declineFriendRequest(fromUserId) {
+  S.friendRequests[S.me.id] = (S.friendRequests[S.me.id] || []).filter(r => r.from !== fromUserId);
+  save();
+  render();
+}
+
+function getIncomingRequests() {
+  return (S.friendRequests[S.me.id] || []).map(r => {
+    const user = S.users.find(u => u.id === r.from);
+    return user ? {...r, user} : null;
+  }).filter(Boolean);
+}
+
+// ============ ЧАТЫ ============
+function getOrCreateDM(user) {
+  let chat = S.chats.find(c => !c.isBot && !c.isGroup && c.members?.includes(S.me.id) && c.members?.includes(user.id));
+  if (!chat) {
+    chat = {
+      id: 'dm-' + Date.now(),
+      name: user.name || user.email,
+      avatar: user.avatar || '👤',
+      members: [S.me.id, user.id],
+      messages: []
+    };
+    S.chats.push(chat);
+    save();
+  }
+  return chat;
+}
+
+function sendMsg(text) {
+  if (!S.chat || S.chat.isBot || !text.trim()) return;
+  S.chat.messages.push({
+    id: 'm' + Date.now(),
+    sender: S.me.id,
+    text: text.trim(),
+    time: Date.now(),
+    read: false
+  });
+  $('#msgInput').value = '';
+  renderChat();
+  save();
+}
+
+// ============ ПОДАРКИ ============
+function sendGift(recipientId, gift) {
+  const myInv = S.inventory[S.me.id] || [];
+  const idx = myInv.findIndex(g => g.id === gift.id);
+  if (idx === -1) return alert('У вас нет этого подарка!');
+  
+  // Удаляем из инвентаря отправителя
+  const giftToSend = myInv.splice(idx, 1)[0];
+  S.inventory[S.me.id] = myInv;
+  
+  // Добавляем получателю
+  if (!S.inventory[recipientId]) S.inventory[recipientId] = [];
+  S.inventory[recipientId].push({
+    ...giftToSend, 
+    from: S.me.id, 
+    receivedAt: Date.now()
+  });
+  
+  // Находим или создаём чат
+  const recipient = S.users.find(u => u.id === recipientId);
+  if (!recipient) return;
+  
+  const chat = getOrCreateDM(recipient);
+  
+  // Добавляем сообщение о подарке
+  chat.messages.push({
+    id: 'gift-' + Date.now(),
+    sender: S.me.id,
+    type: 'gift',
+    gift: giftToSend,
+    text: `🎁 Подарок: ${giftToSend.icon} ${giftToSend.name}`,
+    time: Date.now()
+  });
+  
+  save();
+  alert(`🎁 Подарок "${giftToSend.name}" отправлен пользователю ${recipient.name}!`);
+  closeModal('giftModal');
+  render();
+}
+
+// ============ ГРУППЫ ============
+function createGroup(name, memberIds) {
+  if (!name.trim()) return alert('Введите название группы');
+  if (memberIds.length === 0) return alert('Выберите участников');
+  
+  const group = {
+    id: 'group-' + Date.now(),
+    name: name.trim(),
+    avatar: '👥',
+    members: [S.me.id, ...memberIds],
+    isGroup: true,
+    admin: S.me.id,
+    messages: [],
+    createdAt: Date.now()
+  };
+  
+  S.groups.push(group);
+  S.chats.push(group);
+  save();
+  closeModal('groupModal');
+  S.chat = group;
+  render();
+}
+
+function addMemberToGroup(groupId, userId) {
+  const group = S.groups.find(g => g.id === groupId);
+  const chat = S.chats.find(c => c.id === groupId);
+  if (group && chat && !group.members.includes(userId)) {
+    group.members.push(userId);
+    chat.members.push(userId);
+    save();
+    showGroupInfo(group);
+  }
+}
+
+function removeMember(groupId, userId) {
+  const group = S.groups.find(g => g.id === groupId);
+  const chat = S.chats.find(c => c.id === groupId);
+  if (group && group.admin === S.me.id) {
+    group.members = group.members.filter(m => m !== userId);
+    if (chat) chat.members = group.members;
+    save();
+    showGroupInfo(group);
+  }
+}
+
+function leaveGroup(groupId) {
+  const group = S.groups.find(g => g.id === groupId);
+  if (!group) return;
+  
+  group.members = group.members.filter(m => m !== S.me.id);
+  const chat = S.chats.find(c => c.id === groupId);
+  if (chat) chat.members = group.members;
+  
+  if (group.members.length === 0) {
+    S.groups = S.groups.filter(g => g.id !== groupId);
+    S.chats = S.chats.filter(c => c.id !== groupId);
+  } else if (group.admin === S.me.id) {
+    group.admin = group.members[0];
+  }
+  
+  S.chat = null;
+  save();
+  closeModal('groupInfoModal');
+  render();
+}
+
+function sendGroupMsg(text) {
+  if (!S.chat?.isGroup || !text.trim()) return;
+  S.chat.messages.push({
+    id: 'm' + Date.now(),
+    sender: S.me.id,
+    text: text.trim(),
+    time: Date.now()
+  });
+  $('#msgInput').value = '';
+  renderChat();
+  save();
+}
+
+// ============ ДРУЗЬЯ ============
+function searchUsers(term) {
+  const t = term.toLowerCase();
+  return S.users.filter(u => 
+    u.id !== S.me.id && 
+    (u.name?.toLowerCase().includes(t) || u.email.toLowerCase().includes(t))
+  );
+}
+
+// ============ ЗВОНКИ ============
+let callTimer, callSec = 0;
+function startCall() {
+  if (!S.chat || S.chat.isBot) return alert('Нельзя звонить ботам');
+  $('#callOverlay').classList.add('active');
+  $('#callName').textContent = S.chat.name;
+  $('#callStatus').textContent = 'Вызов...';
+  $('#callTime').textContent = '00:00';
+  callSec = 0;
+  setTimeout(() => {
+    $('#callStatus').textContent = 'В разговоре';
+    callTimer = setInterval(() => {
+      callSec++;
+      $('#callTime').textContent = String(Math.floor(callSec/60)).padStart(2,'0') + ':' + String(callSec%60).padStart(2,'0');
+    }, 1000);
+  }, 2000);
+}
+
+function endCall() {
+  clearInterval(callTimer);
+  $('#callOverlay').classList.remove('active');
+}
+
+// ============ БОТЫ ============
+function renderBotUI(chat) {
+  const area = $('#botArea');
+  area.innerHTML = '';
+  if (!chat?.isBot) return;
+
+  // КЛИКЕР
+  if (chat.botType === 'clicker') {
+    const gems = S.gems[S.me.id] || 0;
+    area.innerHTML = `
+      <div style="text-align:center;padding:40px 20px;">
+        <div style="font-size:24px;margin-bottom:20px;">💎 Ваши алмазы: <strong id="clickGems">${gems}</strong></div>
+        <button class="click-button" id="clickBtn">
+          <span>👆</span>
+          КЛИК!
+        </button>
+        <div style="margin-top:20px;color:var(--subtext);">Нажимайте и получайте алмазы!</div>
+      </div>
+    `;
+    $('#clickBtn').onclick = () => {
+      S.gems[S.me.id] = (S.gems[S.me.id] || 0) + 1;
+      $('#clickGems').textContent = S.gems[S.me.id];
+      updateHeader();
+      save();
+      const btn = $('#clickBtn');
+      btn.style.transform = 'scale(0.9)';
+      setTimeout(() => btn.style.transform = '', 100);
+    };
+  }
+
+  // РУЛЕТКА
+  if (chat.botType === 'roulette') {
+    const mults = [0, 1, 2, 3, 5, 10];
+    const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c'];
+    
+    area.innerHTML = `
+      <div style="text-align:center;padding:20px;">
+        <div style="font-size:20px;margin-bottom:15px;">💎 Баланс: <strong id="rGems">${S.gems[S.me.id] || 0}</strong></div>
+        
+        <div class="roulette-wheel">
+          <div class="roulette-pointer"></div>
+          <div class="roulette-inner" id="wheel"></div>
+          <div class="roulette-center">🎰</div>
+        </div>
+        
+        <div style="margin:20px 0;display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span>Ставка:</span>
+          <input type="number" id="betInput" class="input" style="width:100px;text-align:center;" value="${S.bet}" min="1">
+          <span>💎</span>
+        </div>
+        
+        <div style="display:flex;gap:10px;justify-content:center;margin-bottom:15px;flex-wrap:wrap;">
+          <button class="btn" onclick="setBet(10)">10</button>
+          <button class="btn" onclick="setBet(50)">50</button>
+          <button class="btn" onclick="setBet(100)">100</button>
+          <button class="btn" onclick="setBet(500)">500</button>
+        </div>
+        
+        <button class="btn" style="font-size:18px;padding:15px 40px;" id="spinBtn">🎰 КРУТИТЬ!</button>
+        
+        <div style="margin-top:15px;font-size:14px;color:var(--subtext);">
+          Множители: ${mults.map((m,i) => `<span style="color:${colors[i]};font-weight:bold;">${m}x</span>`).join(' · ')}
+        </div>
+      </div>
+    `;
+    
+    const wheel = $('#wheel');
+    mults.forEach((m, i) => {
+      const seg = el('div', 'roulette-segment');
+      seg.style.background = colors[i];
+      seg.style.transform = `rotate(${i * 60 - 90}deg)`;
+      seg.innerHTML = `<span>${m}x</span>`;
+      wheel.appendChild(seg);
+    });
+    
+    $('#spinBtn').onclick = () => {
+      const bet = parseInt($('#betInput').value) || 10;
+      S.bet = bet;
+      const bal = S.gems[S.me.id] || 0;
+      
+      if (bet < 1) return alert('Минимальная ставка: 1');
+      if (bet > bal) return alert(`Недостаточно алмазов! У вас: ${bal}`);
+      
+      S.gems[S.me.id] -= bet;
+      $('#rGems').textContent = S.gems[S.me.id];
+      updateHeader();
+      
+      const winIdx = Math.floor(Math.random() * 6);
+      const mult = mults[winIdx];
+      const deg = 1800 + winIdx * 60 + 30;
+      
+      const wh = $('#wheel');
+      wh.style.transform = `rotate(${deg}deg)`;
+      $('#spinBtn').disabled = true;
+      
+      setTimeout(() => {
+        const win = bet * mult;
+        S.gems[S.me.id] += win;
+        $('#rGems').textContent = S.gems[S.me.id];
+        updateHeader();
+        save();
+        
+        if (mult === 0) {
+          alert(`😢 Вы проиграли ${bet} алмазов!`);
+        } else {
+          alert(`🎉 Выигрыш: ${win} алмазов (x${mult})!`);
+        }
+        
+        $('#spinBtn').disabled = false;
+        wh.style.transition = 'none';
+        wh.style.transform = 'rotate(0)';
+        setTimeout(() => wh.style.transition = 'transform 5s cubic-bezier(0.17,0.67,0.12,0.99)', 50);
+      }, 5000);
+    };
+  }
+
+  // МАГАЗИН
+  if (chat.botType === 'shop') {
+    const inv = S.inventory[S.me.id] || [];
+    area.innerHTML = `
+      <div style="padding:15px;">
+        <div style="font-size:18px;margin-bottom:15px;">💎 Баланс: <strong>${S.gems[S.me.id] || 0}</strong> | 🎁 Инвентарь: <strong>${inv.length}</strong></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;" id="shopGrid"></div>
+      </div>
+    `;
+    
+    const grid = $('#shopGrid');
+    GIFTS.forEach(gift => {
+      const ownedCount = inv.filter(g => g.id === gift.id).length;
+      const card = el('div', 'card', `
+        <div style="padding:12px;text-align:center;">
+          <div style="font-size:36px;">${gift.icon}</div>
+          <div style="font-weight:600;margin:5px 0;">${gift.name}</div>
+          <div style="font-size:12px;color:var(--subtext);">${gift.desc}</div>
+          <div style="color:var(--accent);font-weight:bold;margin:5px 0;">${gift.price} 💎</div>
+          ${ownedCount > 0 ? `<div style="font-size:11px;color:var(--success);margin-bottom:5px;">У вас: ${ownedCount}</div>` : ''}
+          <div id="actions-${gift.id}"></div>
+        </div>
+      `);
+      grid.appendChild(card);
+      
+      const actions = $(`#actions-${gift.id}`);
+      actions.innerHTML = `
+        <button class="btn" style="width:100%;margin-bottom:5px;" data-buy="${gift.id}">Купить</button>
+        ${ownedCount > 0 ? `
+          <button class="btn btn-outline" style="width:100%;font-size:11px;margin-bottom:5px;" data-sell="${gift.id}">Продать (${Math.floor(gift.price * 0.7)}💎)</button>
+          <button class="btn btn-success" style="width:100%;font-size:11px;" data-give="${gift.id}">Подарить</button>
+        ` : ''}
+      `;
+    });
+    
+    grid.onclick = e => {
+      const buyId = e.target.dataset.buy;
+      const sellId = e.target.dataset.sell;
+      const giveId = e.target.dataset.give;
+      
+      if (buyId) {
+        const gift = GIFTS.find(g => g.id === buyId);
+        if (!gift) return;
+        if ((S.gems[S.me.id] || 0) < gift.price) return alert('Недостаточно алмазов!');
+        S.gems[S.me.id] -= gift.price;
+        S.inventory[S.me.id].push({...gift, boughtAt: Date.now()});
+        save();
+        renderBotUI(chat);
+        updateHeader();
+      }
+      
+      if (sellId) {
+        const inv = S.inventory[S.me.id] || [];
+        const idx = inv.findIndex(g => g.id === sellId);
+        if (idx === -1) return;
+        const gift = inv[idx];
+        inv.splice(idx, 1);
+        S.gems[S.me.id] += Math.floor(gift.price * 0.7);
+        save();
+        renderBotUI(chat);
+        updateHeader();
+      }
+      
+      if (giveId) {
+        const gift = S.inventory[S.me.id]?.find(g => g.id === giveId);
+        if (gift) openGiftModal(gift);
+      }
+    };
+  }
+
+  // ПОДДЕРЖКА
+  if (chat.botType === 'support') {
+    area.innerHTML = `
+      <div style="padding:20px;text-align:center;">
+        <div style="font-size:60px;margin-bottom:15px;">🛟</div>
+        <div style="font-size:20px;font-weight:bold;margin-bottom:10px;">Поддержка FXkey pro 2</div>
+        <div style="color:var(--subtext);margin-bottom:20px;">Задайте ваш вопрос</div>
+        <input class="input" id="supportQ" placeholder="Введите вопрос..." style="margin-bottom:10px;">
+        <button class="btn" style="width:100%;" id="supportSend">Отправить</button>
+        <div id="supportMsgs" style="margin-top:20px;text-align:left;"></div>
+      </div>
+    `;
+    
+    const renderSupportMsgs = () => {
+      const msgs = chat.messages || [];
+      $('#supportMsgs').innerHTML = msgs.map(m => `
+        <div class="message ${m.sender === S.me.id ? 'from-me' : 'from-them'}" style="margin:5px 0;">
+          ${m.text}
+        </div>
+      `).join('');
+    };
+    renderSupportMsgs();
+    
+    $('#supportSend').onclick = () => {
+      const q = $('#supportQ').value.trim();
+      if (!q) return;
+      chat.messages.push({id: 'm'+Date.now(), sender: S.me.id, text: q, time: Date.now()});
+      $('#supportQ').value = '';
+      renderSupportMsgs();
+      
+      setTimeout(() => {
+        chat.messages.push({
+          id: 's'+Date.now(), sender: 'support',
+          text: 'Спасибо за обращение! Мы рассмотрим ваш вопрос в ближайшее время.',
+          time: Date.now()
+        });
+        renderSupportMsgs();
+        save();
+      }, 3000);
+    };
+  }
+}
+
+// ============ РЕНДЕР ============
+function render() {
+  applyTheme();
+  if (!S.me) {
+    renderAuth();
+  } else {
+    renderApp();
+  }
+}
+
+function applyTheme() {
+  document.body.className = `theme-${S.settings.theme} design-${S.settings.design}`;
+}
+
+function renderAuth() {
+  $('#app').innerHTML = `
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;">
+      <div class="card" style="width:100%;max-width:400px;padding:30px;">
+        <div style="text-align:center;margin-bottom:25px;">
+          <div style="font-size:50px;margin-bottom:10px;">📱</div>
+          <h1 style="margin:0;color:var(--accent);">FXkey pro 2</h1>
+          <p style="color:var(--subtext);margin:5px 0;">Современный мессенджер</p>
+        </div>
+        
+        <div id="loginForm">
+          <input class="input" id="authEmail" placeholder="Email" style="margin-bottom:10px;">
+          <input class="input" type="password" id="authPass" placeholder="Пароль" style="margin-bottom:15px;">
+          <button class="btn" style="width:100%;margin-bottom:10px;" id="loginBtn">Войти</button>
+          <button class="btn btn-outline" style="width:100%;" id="showReg">Создать аккаунт</button>
+        </div>
+        
+        <div id="regForm" style="display:none;">
+          <input class="input" id="regEmail" placeholder="Email" style="margin-bottom:10px;">
+          <input class="input" type="password" id="regPass" placeholder="Пароль (мин. 8 символов)" style="margin-bottom:10px;">
+          <input class="input" id="regName" placeholder="Имя" style="margin-bottom:10px;">
+          <input class="input" id="regAvatar" placeholder="Аватар (эмодзи)" style="margin-bottom:15px;">
+          <button class="btn" style="width:100%;margin-bottom:10px;" id="regBtn">Зарегистрироваться</button>
+          <button class="btn btn-outline" style="width:100%;" id="showLogin">Уже есть аккаунт</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  $('#loginBtn').onclick = () => login($('#authEmail').value.trim(), $('#authPass').value);
+  $('#showReg').onclick = () => { $('#loginForm').style.display = 'none'; $('#regForm').style.display = 'block'; };
+  $('#showLogin').onclick = () => { $('#regForm').style.display = 'none'; $('#loginForm').style.display = 'block'; };
+  $('#regBtn').onclick = () => register({
+    email: $('#regEmail').value.trim(),
+    password: $('#regPass').value,
+    name: $('#regName').value.trim() || 'Пользователь',
+    avatar: $('#regAvatar').value.trim() || '👤'
+  });
+  
+  $('#authEmail').onkeydown = $('#authPass').onkeydown = e => { if (e.key === 'Enter') $('#loginBtn').click(); };
+}
+
+function renderApp() {
+  const incomingRequests = getIncomingRequests();
+  
+  $('#app').innerHTML = `
+    <div class="layout">
+      <!-- Сайдбар -->
+      <div class="sidebar" style="background:var(--card);border-right:1px solid rgba(0,0,0,0.1);display:flex;flex-direction:column;height:100vh;">
+        <div style="padding:15px;border-bottom:1px solid rgba(0,0,0,0.1);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:15px;">
+            <div style="width:50px;height:50px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;">${S.me.avatar || '👤'}</div>
+            <div style="flex:1;">
+              <div style="font-weight:bold;">${S.me.name}</div>
+              <div style="font-size:12px;color:var(--subtext);">💎 <span id="headerGems">${S.gems[S.me.id] || 0}</span></div>
+            </div>
+            <button class="btn" style="padding:8px;position:relative;" id="settingsBtn">
+              ⚙️
+              ${incomingRequests.length > 0 ? `<div class="badge" style="position:absolute;top:-5px;right:-5px;">${incomingRequests.length}</div>` : ''}
+            </button>
+          </div>
+          
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <button class="btn" style="flex:1;font-size:12px;position:relative;" id="addFriendBtn">
+              👤+ Друг
+              ${incomingRequests.length > 0 ? `<div class="badge" style="position:absolute;top:-8px;right:-8px;">${incomingRequests.length}</div>` : ''}
+            </button>
+            <button class="btn" style="flex:1;font-size:12px;" id="addGroupBtn">👥+ Группа</button>
+          </div>
+          
+          <div style="display:flex;gap:5px;margin-bottom:12px;">
+            ${['chats','friends','groups','bots'].map(t => `
+              <button class="btn ${S.tab === t ? '' : 'btn-outline'}" style="flex:1;padding:8px;" data-tab="${t}">
+                ${t === 'chats' ? '💬' : t === 'friends' ? '👥' : t === 'groups' ? '🏠' : '🤖'}
+              </button>
+            `).join('')}
+          </div>
+          
+          <input class="input" id="searchInput" placeholder="🔍 Поиск...">
+        </div>
+        
+        <div id="chatList" style="flex:1;overflow-y:auto;"></div>
+      </div>
+      
+      <!-- Область чата -->
+      <div style="display:flex;flex-direction:column;height:100vh;background:var(--bg);">
+        <div id="chatHeader" style="padding:15px;background:var(--card);border-bottom:1px solid rgba(0,0,0,0.1);display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-weight:bold;font-size:18px;" id="chatTitle">FXkey pro 2</div>
+            <div style="font-size:12px;color:var(--subtext);" id="chatSubtitle">Выберите чат</div>
+          </div>
+          <div id="chatActions" style="display:flex;gap:8px;"></div>
+        </div>
+        
+        <div id="chatMessages" style="flex:1;overflow-y:auto;padding:15px;"></div>
+        <div id="botArea"></div>
+        
+        <div id="inputArea" style="padding:15px;background:var(--card);border-top:1px solid rgba(0,0,0,0.1);display:none;">
+          <div style="display:flex;gap:10px;">
+            <input class="input" id="msgInput" placeholder="Сообщение..." style="flex:1;">
+            <button class="btn" id="sendBtn">➤</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    ${renderModals()}
+  `;
+  
+  attachEvents();
+  renderChatList();
+  renderChat();
+}
+
+function renderModals() {
+  const incomingRequests = getIncomingRequests();
+  
+  return `
+    <!-- Настройки -->
+    <div class="modal" id="settingsModal">
+      <div class="modal-content card" style="padding:25px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <h2 style="margin:0;">⚙️ Настройки</h2>
+          <button onclick="closeModal('settingsModal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">×</button>
+        </div>
+        
+        <h3>🎨 Тема</h3>
+        <div style="display:flex;gap:15px;margin-bottom:20px;">
+          <label style="cursor:pointer;"><input type="radio" name="theme" value="light" ${S.settings.theme === 'light' ? 'checked' : ''}> ☀️ Светлая</label>
+          <label style="cursor:pointer;"><input type="radio" name="theme" value="dark" ${S.settings.theme === 'dark' ? 'checked' : ''}> 🌙 Тёмная</label>
+        </div>
+        
+        <h3>🖌️ Дизайн</h3>
+        <div id="designList" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;"></div>
+        
+        <h3>👤 Профиль</h3>
+        <input class="input" id="profName" placeholder="Имя" value="${S.me?.name || ''}" style="margin-bottom:10px;">
+        <input class="input" id="profAvatar" placeholder="Аватар" value="${S.me?.avatar || ''}" style="margin-bottom:15px;">
+        <button class="btn" style="width:100%;margin-bottom:10px;" id="saveProfile">💾 Сохранить</button>
+        
+        <h3>🎁 Мои подарки (${(S.inventory[S.me?.id] || []).length})</h3>
+        <div style="margin-bottom:20px;">${(S.inventory[S.me?.id] || []).map(g => `<span style="font-size:24px;">${g.icon}</span>`).join(' ') || '<span style="color:var(--subtext);">Пусто</span>'}</div>
+        
+        <button class="btn btn-danger" style="width:100%;" id="logoutBtn">🚪 Выйти</button>
+      </div>
+    </div>
+    
+    <!-- Добавить друга / Заявки -->
+    <div class="modal" id="friendModal">
+      <div class="modal-content card" style="padding:25px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <h2 style="margin:0;">👤 Друзья</h2>
+          <button onclick="closeModal('friendModal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">×</button>
+        </div>
+        
+        <!-- Входящие заявки -->
+        ${incomingRequests.length > 0 ? `
+          <h3 style="color:var(--accent);">📥 Входящие заявки (${incomingRequests.length})</h3>
+          <div id="incomingRequests" style="margin-bottom:20px;">
+            ${incomingRequests.map(r => `
+              <div class="card" style="padding:12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="width:40px;height:40px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;">${r.user.avatar || '👤'}</div>
+                  <div>
+                    <div style="font-weight:600;">${r.user.name || 'Пользователь'}</div>
+                    <div style="font-size:12px;color:var(--subtext);">${r.user.email}</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:5px;">
+                  <button class="btn btn-success" style="padding:8px 12px;" onclick="acceptFriendRequest('${r.from}')">✓</button>
+                  <button class="btn btn-danger" style="padding:8px 12px;" onclick="declineFriendRequest('${r.from}')">✕</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+        
+        <h3>🔍 Найти пользователя</h3>
+        <div style="display:flex;gap:10px;margin-bottom:15px;">
+          <input class="input" id="friendSearch" placeholder="Имя или email...">
+          <button class="btn" id="friendSearchBtn">🔍</button>
+        </div>
+        <div id="friendResults"></div>
+      </div>
+    </div>
+    
+    <!-- Создать группу -->
+    <div class="modal" id="groupModal">
+      <div class="modal-content card" style="padding:25px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <h2 style="margin:0;">👥 Создать группу</h2>
+          <button onclick="closeModal('groupModal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">×</button>
+        </div>
+        <input class="input" id="groupName" placeholder="Название группы" style="margin-bottom:15px;">
+        <div style="margin-bottom:15px;">
+          <strong>Выберите участников:</strong>
+          <div id="groupMembers" style="max-height:200px;overflow-y:auto;margin-top:10px;"></div>
+        </div>
+        <button class="btn" style="width:100%;" id="createGroupBtn">✅ Создать</button>
+      </div>
+    </div>
+    
+    <!-- Информация о группе -->
+    <div class="modal" id="groupInfoModal">
+      <div class="modal-content card" style="padding:25px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <h2 style="margin:0;">ℹ️ О группе</h2>
+          <button onclick="closeModal('groupInfoModal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">×</button>
+        </div>
+        <div id="groupInfoContent"></div>
+      </div>
+    </div>
+    
+    <!-- Отправить подарок -->
+    <div class="modal" id="giftModal">
+      <div class="modal-content card" style="padding:25px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <h2 style="margin:0;" id="giftModalTitle">🎁 Подарить</h2>
+          <button onclick="closeModal('giftModal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">×</button>
+        </div>
+        <div id="giftUserList"></div>
+      </div>
+    </div>
+    
+    <!-- Звонок -->
+    <div class="call-overlay" id="callOverlay">
+      <div style="text-align:center;color:#fff;">
+        <div class="call-avatar">📞</div>
+        <div style="font-size:28px;font-weight:bold;margin-bottom:10px;" id="callName">Имя</div>
+        <div style="font-size:18px;margin-bottom:10px;" id="callStatus">Вызов...</div>
+        <div style="font-size:48px;font-family:monospace;margin-bottom:30px;" id="callTime">00:00</div>
+        <button class="btn btn-danger" style="font-size:20px;padding:15px 30px;" onclick="endCall()">📵 Завершить</button>
+      </div>
+    </div>
+  `;
+}
+
+function attachEvents() {
+  $$('[data-tab]').forEach(btn => {
+    btn.onclick = () => {
+      S.tab = btn.dataset.tab;
+      render();
+    };
+  });
+  
+  $('#settingsBtn').onclick = () => { openModal('settingsModal'); renderDesigns(); };
+  $('#addFriendBtn').onclick = () => openModal('friendModal');
+  $('#addGroupBtn').onclick = () => { openModal('groupModal'); renderGroupMembers(); };
+  
+  $('#searchInput').oninput = renderChatList;
+  
+  $('#sendBtn').onclick = () => {
+    if (S.chat?.isGroup) sendGroupMsg($('#msgInput').value);
+    else sendMsg($('#msgInput').value);
+  };
+  $('#msgInput').onkeydown = e => { if (e.key === 'Enter') $('#sendBtn').click(); };
+  
+  // Поиск друзей
+  $('#friendSearchBtn').onclick = () => {
+    const term = $('#friendSearch').value.trim();
+    if (!term) return;
+    const results = searchUsers(term);
+    const container = $('#friendResults');
+    container.innerHTML = results.length ? '' : '<div style="color:var(--subtext);text-align:center;padding:20px;">Не найдено</div>';
+    results.forEach(u => {
+      const isFriend = (S.friends[S.me.id] || []).includes(u.id);
+      const hasPendingRequest = (S.friendRequests[u.id] || []).some(r => r.from === S.me.id);
+      
+      let btnHtml = '';
+      if (isFriend) {
+        btnHtml = `<button class="btn btn-outline" disabled>✓ Друзья</button>`;
+      } else if (hasPendingRequest) {
+        btnHtml = `<button class="btn btn-outline" disabled>⏳ Заявка отправлена</button>`;
+      } else {
+        btnHtml = `<button class="btn" data-request="${u.id}">📤 Отправить заявку</button>`;
+      }
+      
+      const row = el('div', 'card', `
+        <div style="padding:12px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:40px;height:40px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;">${u.avatar || '👤'}</div>
+            <div>
+              <div style="font-weight:600;">${u.name || 'Пользователь'}</div>
+              <div style="font-size:12px;color:var(--subtext);">${u.email}</div>
+            </div>
+          </div>
+          ${btnHtml}
+        </div>
+      `);
+      
+      const reqBtn = row.querySelector('[data-request]');
+      if (reqBtn) {
+        reqBtn.onclick = () => sendFriendRequest(u.id);
+      }
+      
+      container.appendChild(row);
+    });
+  };
+  $('#friendSearch').onkeydown = e => { if (e.key === 'Enter') $('#friendSearchBtn').click(); };
+  
+  // Создание группы
+  $('#createGroupBtn').onclick = () => {
+    const name = $('#groupName').value;
+    const checks = $$('#groupMembers input:checked');
+    createGroup(name, Array.from(checks).map(c => c.value));
+  };
+  
+  // Настройки темы
+  $$('input[name=theme]').forEach(r => {
+    r.onchange = () => { S.settings.theme = r.value; save(); applyTheme(); };
+  });
+  
+  // Профиль
+  $('#saveProfile').onclick = () => {
+    S.me.name = $('#profName').value.trim();
+    S.me.avatar = $('#profAvatar').value.trim();
+    save();
+    render();
+  };
+  
+  $('#logoutBtn').onclick = logout;
+}
+
+function renderDesigns() {
+  const designs = [
+    {id:'telegram', name:'📱 Telegram'},
+    {id:'classic', name:'📋 Классика'},
+    {id:'neon', name:'🌈 Неон'},
+    {id:'minimal', name:'⬜ Минимал'},
+    {id:'natural', name:'🌿 Природа'},
+    {id:'retro', name:'📻 Ретро'},
+    {id:'toxic', name:'☢️ Токсичный'}
+  ];
+  $('#designList').innerHTML = designs.map(d => `
+    <label class="card" style="padding:10px;cursor:pointer;display:flex;align-items:center;gap:8px;">
+      <input type="radio" name="design" value="${d.id}" ${S.settings.design === d.id ? 'checked' : ''}>
+      <span>${d.name}</span>
+    </label>
+  `).join('');
+  $$('input[name=design]').forEach(r => {
+    r.onchange = () => { S.settings.design = r.value; save(); applyTheme(); };
+  });
+}
+
+function renderGroupMembers() {
+  const friends = S.friends[S.me.id] || [];
+  const container = $('#groupMembers');
+  container.innerHTML = friends.length ? '' : '<div style="color:var(--subtext);">Сначала добавьте друзей</div>';
+  friends.forEach(fid => {
+    const user = S.users.find(u => u.id === fid);
+    if (!user) return;
+    container.innerHTML += `
+      <label class="card" style="display:flex;align-items:center;gap:10px;padding:10px;margin-bottom:8px;cursor:pointer;">
+        <input type="checkbox" value="${user.id}">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;">${user.avatar || '👤'}</div>
+        <span>${user.name || user.email}</span>
+      </label>
+    `;
+  });
+}
+
+function openGiftModal(gift) {
+  openModal('giftModal');
+  $('#giftModalTitle').textContent = `🎁 Подарить ${gift.icon} ${gift.name}`;
+  const list = $('#giftUserList');
+  const friends = S.friends[S.me.id] || [];
+  
+  if (friends.length === 0) {
+    list.innerHTML = '<div style="color:var(--subtext);text-align:center;padding:20px;">Добавьте друзей, чтобы отправлять подарки</div>';
+    return;
+  }
+  
+  list.innerHTML = '';
+  friends.forEach(fid => {
+    const user = S.users.find(u => u.id === fid);
+    if (!user) return;
+    const row = el('div', 'card', `
+      <div style="padding:12px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:45px;height:45px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;">${user.avatar || '👤'}</div>
+          <div>
+            <div style="font-weight:600;">${user.name || 'Пользователь'}</div>
+            <div style="font-size:12px;color:var(--subtext);">${user.email}</div>
+          </div>
+        </div>
+        <button class="btn" data-send="${user.id}">🎁 Отправить</button>
+      </div>
+    `);
+    row.querySelector('[data-send]').onclick = () => sendGift(user.id, gift);
+    list.appendChild(row);
+  });
+}
+
+function renderChatList() {
+  const list = $('#chatList');
+  if (!list) return;
+  
+  const term = ($('#searchInput')?.value || '').toLowerCase();
+  let items = [];
+  
+  if (S.tab === 'chats') {
+    items = S.chats.filter(c => c.members?.includes(S.me.id));
+  } else if (S.tab === 'friends') {
+    items = (S.friends[S.me.id] || []).map(fid => {
+      const u = S.users.find(x => x.id === fid);
+      return u ? {id: 'f-'+fid, name: u.name || u.email, avatar: u.avatar, user: u, isFriend: true} : null;
+    }).filter(Boolean);
+  } else if (S.tab === 'groups') {
+    items = S.groups.filter(g => g.members?.includes(S.me.id));
+  } else if (S.tab === 'bots') {
+    items = S.chats.filter(c => c.isBot && c.members?.includes(S.me.id));
+  }
+  
+  if (term) items = items.filter(i => (i.name || '').toLowerCase().includes(term));
+  
+  list.innerHTML = items.length ? '' : '<div style="padding:20px;text-align:center;color:var(--subtext);">Пусто</div>';
+  
+  items.forEach(item => {
+    const isActive = S.chat?.id === item.id;
+    const lastMsg = item.messages?.at(-1)?.text?.substring(0, 30) || 'Нет сообщений';
+    
+    const row = el('div', '', `
+      <div style="padding:12px 15px;display:flex;align-items:center;gap:12px;cursor:pointer;background:${isActive ? 'var(--bg)' : 'transparent'};border-bottom:1px solid rgba(0,0,0,0.05);transition:background .2s;">
+        <div style="width:50px;height:50px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;flex-shrink:0;">
+          ${item.avatar || item.user?.avatar || '💬'}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.name || 'Чат'}</div>
+          <div style="font-size:12px;color:var(--subtext);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${lastMsg}</div>
+        </div>
+        ${item.isBot ? '<span style="background:var(--accent);color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;">Бот</span>' : ''}
+        ${item.isGroup ? '<span style="background:var(--accent);color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;">Группа</span>' : ''}
+      </div>
+    `);
+    
+    row.onclick = () => {
+      if (item.isFriend) {
+        S.chat = getOrCreateDM(item.user);
+      } else {
+        S.chat = item;
+      }
+      renderChatList();
+      renderChat();
+    };
+    
+    list.appendChild(row);
+  });
+}
+
+function renderChat() {
+  const chat = S.chat;
+  const msgs = $('#chatMessages');
+  const title = $('#chatTitle');
+  const subtitle = $('#chatSubtitle');
+  const actions = $('#chatActions');
+  const input = $('#inputArea');
+  const botArea = $('#botArea');
+  
+  if (!msgs) return;
+  msgs.innerHTML = '';
+  botArea.innerHTML = '';
+  actions.innerHTML = '';
+  
+  if (!chat) {
+    title.textContent = 'FXkey pro 2';
+    subtitle.textContent = 'Выберите чат для начала';
+    input.style.display = 'none';
+    msgs.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--subtext);">
+        <div style="font-size:80px;margin-bottom:20px;">💬</div>
+        <div style="font-size:24px;font-weight:bold;">Добро пожаловать!</div>
+        <div>Выберите чат или добавьте друзей</div>
+      </div>
+    `;
+    return;
+  }
+  
+  title.textContent = chat.name || 'Чат';
+  
+  if (chat.isBot) {
+    subtitle.textContent = '🤖 Бот';
+    input.style.display = 'none';
+    renderBotUI(chat);
+  } else if (chat.isGroup) {
+    subtitle.textContent = `👥 ${chat.members.length} участников`;
+    input.style.display = 'block';
+    actions.innerHTML = `
+      <button class="btn" id="callBtnG">📞</button>
+      <button class="btn" id="groupInfoBtn">ℹ️</button>
+    `;
+    $('#callBtnG').onclick = startCall;
+    $('#groupInfoBtn').onclick = () => showGroupInfo(chat);
+  } else {
+    subtitle.textContent = '🟢 В сети';
+    input.style.display = 'block';
+    
+    // Получаем ID другого пользователя в чате
+    const otherUserId = chat.members?.find(m => m !== S.me.id);
+    
+    actions.innerHTML = `
+      <button class="btn" id="callBtnD">📞</button>
+      <button class="btn" id="giftBtnD">🎁</button>
+    `;
+    $('#callBtnD').onclick = startCall;
+    $('#giftBtnD').onclick = () => {
+      const inv = S.inventory[S.me.id] || [];
+      if (inv.length === 0) return alert('Нет подарков! Купите в магазине.');
+      // Открываем выбор подарка для отправки конкретному пользователю
+      openGiftSelectModal(otherUserId);
+    };
+  }
+  
+  // Рендер сообщений
+  (chat.messages || []).forEach(m => {
+    const isMe = m.sender === S.me.id;
+    const sender = S.users.find(u => u.id === m.sender);
+    
+    const div = el('div', `message ${isMe ? 'from-me' : 'from-them'} ${m.type === 'gift' ? 'gift-msg' : ''}`);
+    
+    if (m.type === 'gift') {
+      div.innerHTML = `
+        <div style="font-size:36px;">${m.gift?.icon || '🎁'}</div>
+        <div style="font-weight:bold;">${m.gift?.name || 'Подарок'}</div>
+        <div style="font-size:11px;opacity:0.8;">${time(m.time)}</div>
+      `;
+    } else {
+      div.innerHTML = `
+        ${chat.isGroup && !isMe ? `<div style="font-size:11px;font-weight:bold;margin-bottom:3px;">${sender?.name || 'Пользователь'}</div>` : ''}
+        <div>${m.text}</div>
+        <div style="font-size:10px;opacity:0.7;text-align:right;margin-top:3px;">${time(m.time)} ${isMe ? (m.read ? '✓✓' : '✓') : ''}</div>
+      `;
+    }
+    
+    msgs.appendChild(div);
+  });
+  
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// Новая функция для выбора подарка для конкретного пользователя
+function openGiftSelectModal(recipientId) {
+  const recipient = S.users.find(u => u.id === recipientId);
+  if (!recipient) return;
+  
+  openModal('giftModal');
+  $('#giftModalTitle').textContent = `🎁 Отправить подарок: ${recipient.name}`;
+  const list = $('#giftUserList');
+  const inv = S.inventory[S.me.id] || [];
+  
+  if (inv.length === 0) {
+    list.innerHTML = '<div style="color:var(--subtext);text-align:center;padding:20px;">У вас нет подарков. Купите в магазине!</div>';
+    return;
+  }
+  
+  // Группируем подарки по типу
+  const grouped = {};
+  inv.forEach(g => {
+    if (!grouped[g.id]) grouped[g.id] = {gift: g, count: 0};
+    grouped[g.id].count++;
+  });
+  
+  list.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;"></div>';
+  const grid = list.querySelector('div');
+  
+  Object.values(grouped).forEach(({gift, count}) => {
+    const card = el('div', 'card', `
+      <div style="padding:12px;text-align:center;cursor:pointer;transition:transform .2s;">
+        <div style="font-size:36px;">${gift.icon}</div>
+        <div style="font-weight:600;margin:5px 0;">${gift.name}</div>
+        <div style="font-size:12px;color:var(--subtext);">x${count}</div>
+        <button class="btn" style="width:100%;margin-top:8px;font-size:12px;" data-send="${gift.id}">Отправить</button>
+      </div>
+    `);
+    card.querySelector('[data-send]').onclick = () => sendGift(recipientId, gift);
+    grid.appendChild(card);
+  });
+}
+
+function showGroupInfo(group) {
+  openModal('groupInfoModal');
+  const content = $('#groupInfoContent');
+  const isAdmin = group.admin === S.me.id;
+  
+  let html = `
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="font-size:60px;">${group.avatar || '👥'}</div>
+      <div style="font-size:22px;font-weight:bold;">${group.name}</div>
+      <div style="color:var(--subtext);">${group.members.length} участников</div>
+    </div>
+    <h3>Участники:</h3>
+    <div style="max-height:250px;overflow-y:auto;">
+  `;
+  
+  group.members.forEach(mid => {
+    const member = S.users.find(u => u.id === mid);
+    if (!member) return;
+    const isMeAdmin = mid === group.admin;
+    html += `
+      <div class="card" style="padding:10px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;">${member.avatar || '👤'}</div>
+          <span>${member.name || member.email}</span>
+          ${isMeAdmin ? '<span style="background:var(--accent);color:#fff;padding:2px 6px;border-radius:8px;font-size:10px;">Админ</span>' : ''}
+        </div>
+        ${isAdmin && !isMeAdmin ? `<button class="btn btn-danger" style="padding:5px 10px;font-size:12px;" onclick="removeMember('${group.id}','${mid}')">✕</button>` : ''}
+      </div>
+    `;
+  });
+  
+  html += `</div>`;
+  
+  if (isAdmin) {
+    const friends = (S.friends[S.me.id] || []).filter(fid => !group.members.includes(fid));
+    if (friends.length > 0) {
+      html += `<h3 style="margin-top:15px;">Добавить участников:</h3><div style="max-height:150px;overflow-y:auto;">`;
+      friends.forEach(fid => {
+        const user = S.users.find(u => u.id === fid);
+        if (!user) return;
+        html += `
+          <div class="card" style="padding:10px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;">${user.avatar || '👤'}</div>
+              <span>${user.name || user.email}</span>
+            </div>
+            <button class="btn" style="padding:5px 10px;font-size:12px;" onclick="addMemberToGroup('${group.id}','${user.id}')">+</button>
+          </div>
+        `;
+      });
+      html += `</div>`;
+    }
+  }
+  
+  html += `<button class="btn btn-danger" style="width:100%;margin-top:20px;" onclick="leaveGroup('${group.id}')">🚪 Покинуть группу</button>`;
+  
+  content.innerHTML = html;
+}
+
+function updateHeader() {
+  const el = $('#headerGems');
+  if (el) el.textContent = S.gems[S.me.id] || 0;
+}
+
+function openModal(id) { $('#' + id)?.classList.add('active'); }
+function closeModal(id) { $('#' + id)?.classList.remove('active'); }
+
+// Глобальные функции
+window.closeModal = closeModal;
+window.setBet = b => { S.bet = b; if ($('#betInput')) $('#betInput').value = b; };
+window.removeMember = removeMember;
+window.addMemberToGroup = addMemberToGroup;
+window.leaveGroup = leaveGroup;
+window.endCall = endCall;
+window.acceptFriendRequest = acceptFriendRequest;
+window.declineFriendRequest = declineFriendRequest;
+
+// Старт
+render();
+</script>
+</body>
+</html>
